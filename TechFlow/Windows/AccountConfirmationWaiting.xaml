@@ -1,0 +1,151 @@
+﻿<Window x:Class="TechFlow.Windows.AccountConfirmationWaiting"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TechFlow.Pages"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d"
+        Title="Ожидание подтверждения" Height="600" Width="800"
+        WindowStyle="None" ResizeMode="NoResize"
+        Background="#1b2339" WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <DropShadowEffect x:Key="DropShadowEffect" ShadowDepth="0" BlurRadius="10" Color="Black" Opacity="0.3"/>
+
+        <Style x:Key="GradientButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="15,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                CornerRadius="4"
+                                Background="{TemplateBinding Background}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                BorderBrush="{TemplateBinding BorderBrush}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="3"/>
+                                </Grid.RowDefinitions>
+
+                                <ContentPresenter x:Name="contentPresenter" 
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  Margin="{TemplateBinding Padding}"/>
+
+                                <Border Grid.Row="1" x:Name="underline" 
+                                        Background="#3a5a9a" 
+                                        CornerRadius="2"
+                                        Height="3"
+                                        HorizontalAlignment="Stretch"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="#e0e8ff"/>
+                                <Setter TargetName="underline" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#3a5a9a" Offset="0"/>
+                                            <GradientStop Color="#5fc4b8" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Foreground" Value="#a0a8c0"/>
+                                <Setter TargetName="underline" Property="Background" Value="#252c43"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#222a40" Padding="20" 
+                Effect="{StaticResource DropShadowEffect}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <materialDesign:PackIcon Kind="ShieldAccount" 
+                                       Width="32" Height="32" 
+                                       Foreground="#5fc4b8" 
+                                       Margin="0,0,15,0"/>
+                <TextBlock Text="ОЖИДАНИЕ ПОДТВЕРЖДЕНИЯ" 
+                           Foreground="White" 
+                           FontSize="20" 
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Background="#222a40" Margin="40">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <materialDesign:PackIcon Kind="ClockAlertOutline" 
+                                        Width="80" Height="80" 
+                                        Foreground="#a0a8c0" 
+                                        Margin="0,0,0,20"
+                                        Opacity="0.7"/>
+
+                <TextBlock Text="Ваш аккаунт ожидает подтверждения администратором" 
+                           Foreground="#e0e8ff" 
+                           FontSize="16" 
+                           TextAlignment="Center"
+                           Margin="0,0,0,30"/>
+
+                <ProgressBar IsIndeterminate="True" 
+                             Height="6" 
+                             Width="300" 
+                             Foreground="#5fc4b8"
+                             Background="#252c43"
+                             BorderThickness="0"
+                             Margin="0,0,0,40"/>
+
+                <Button x:Name="ResendRequestButton"
+                        Content="ОТПРАВИТЬ ЗАПРОС ПОВТОРНО" 
+                        Style="{StaticResource GradientButtonStyle}"
+                        HorizontalAlignment="Center"
+                        Foreground="#5fc4b8"
+                        Margin="0,0,0,20"
+                        Click="ResendRequestButton_Click"/>
+
+                <TextBlock Text="Если ожидание затянулось, обратитесь к системному администратору" 
+                           Foreground="#5a6278" 
+                           FontSize="12" 
+                           TextAlignment="Center"
+                           FontStyle="Italic"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="#1b2339" Padding="15">
+            <Button x:Name="LogoutButton"
+                    Content="ВЫЙТИ ИЗ СИСТЕМЫ" 
+                    Style="{StaticResource GradientButtonStyle}"
+                    HorizontalAlignment="Center"
+                    Foreground="#a0a8c0"
+                    Click="LogoutButton_Click"/>
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,445 @@
+﻿<Window x:Class="TechFlow.Windows.ProjectManagement"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TechFlow.Pages"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d"
+        Title="ProjectManagement" Height="800" Width="1000"
+        Loaded="ProjectManagement_Load" UseLayoutRounding="True" 
+        Background="#1b2339" WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+
+        <Style x:Key="MenuButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="#a0a8c0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" Orientation="Vertical" 
+                                            HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                            Margin="0,0,20,0">
+                                    <ContentPresenter x:Name="contentPresenter" 
+                                                      HorizontalAlignment="Center" 
+                                                      VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <Border x:Name="lineBorder" Grid.Column="1" Height="3" 
+                                        VerticalAlignment="Center" Margin="0,0,50,0" Width="120">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop x:Name="gradientStop1" Color="#252c43" Offset="0" />
+                                            <GradientStop x:Name="gradientStop2" Color="#252c43" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="#e0e8ff" />
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="gradientStop1"
+                                                         Storyboard.TargetProperty="Color"
+                                                         To="#3a5a9a" Duration="0:0:0.3" />
+                                            <ColorAnimation Storyboard.TargetName="gradientStop2"
+                                                         Storyboard.TargetProperty="Color"
+                                                         To="#5fc4b8" Duration="0:0:0.3" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="gradientStop1"
+                                                         Storyboard.TargetProperty="Color"
+                                                         To="#252c43" Duration="0:0:0.5" />
+                                            <ColorAnimation Storyboard.TargetName="gradientStop2"
+                                                         Storyboard.TargetProperty="Color"
+                                                         To="#252c43" Duration="0:0:0.5" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ActiveMenuButtonStyle" TargetType="Button" BasedOn="{StaticResource MenuButtonStyle}">
+            <Setter Property="Foreground" Value="#e0e8ff"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" Orientation="Vertical" 
+                                            HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                            Margin="0,0,20,0">
+                                    <ContentPresenter x:Name="contentPresenter" 
+                                                      HorizontalAlignment="Center" 
+                                                      VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <Border x:Name="lineBorder" Grid.Column="1" Height="3" 
+                                        VerticalAlignment="Center" Margin="0,0,50,0" Width="120">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop x:Name="gradientStop1" Color="#3a5a9a" Offset="0" />
+                                            <GradientStop x:Name="gradientStop2" Color="#5fc4b8" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="MenuTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#a0a8c0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,10,0,0"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+        </Style>
+
+        <Storyboard x:Key="AvatarClickAnimation" Duration="0:0:0.3">
+            <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Ellipse.Fill).(GradientBrush.GradientStops)[0].(GradientStop.Color)"
+                                      Storyboard.TargetName="circleFill">
+                <SplineColorKeyFrame KeyTime="0:0:0.0" Value="#5fc4b8"/>
+                <SplineColorKeyFrame KeyTime="0:0:0.15" Value="#3a5a9a"/>
+                <SplineColorKeyFrame KeyTime="0:0:0.3" Value="#3a5a9a"/>
+            </ColorAnimationUsingKeyFrames>
+            <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Ellipse.Fill).(GradientBrush.GradientStops)[1].(GradientStop.Color)"
+                                      Storyboard.TargetName="circleFill">
+                <SplineColorKeyFrame KeyTime="0:0:0.0" Value="#3a5a9a"/>
+                <SplineColorKeyFrame KeyTime="0:0:0.15" Value="#5fc4b8"/>
+                <SplineColorKeyFrame KeyTime="0:0:0.3" Value="#5fc4b8"/>
+            </ColorAnimationUsingKeyFrames>
+
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)"
+                                       Storyboard.TargetName="avatarOverlay">
+                <SplineDoubleKeyFrame KeyTime="0:0:0.0" Value="0.4"/>
+                <SplineDoubleKeyFrame KeyTime="0:0:0.15" Value="0"/>
+            </DoubleAnimationUsingKeyFrames>
+
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                       Storyboard.TargetName="AvatarImage">
+                <SplineDoubleKeyFrame KeyTime="0:0:0.0" Value="0.95"/>
+                <SplineDoubleKeyFrame KeyTime="0:0:0.3" Value="1.0"/>
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                       Storyboard.TargetName="AvatarImage">
+                <SplineDoubleKeyFrame KeyTime="0:0:0.0" Value="0.95"/>
+                <SplineDoubleKeyFrame KeyTime="0:0:0.3" Value="1.0"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+
+        <Style x:Key="AdminMenuButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="#a0a8c0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="0">
+                            <Grid>
+                                <ContentPresenter x:Name="contentPresenter" 
+                                        HorizontalAlignment="Center" 
+                                        VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="#e0e8ff" />
+                                <Setter Property="Background" Value="#252c43" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#1b2339" />
+                                <Setter Property="Foreground" Value="#ffffff" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="2*"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Width="1" HorizontalAlignment="Right" Background="#1b2339">
+            <Border.Effect>
+                <DropShadowEffect ShadowDepth="0" Direction="270" BlurRadius="10" Color="Black" Opacity="0.5"/>
+            </Border.Effect>
+        </Border>
+
+        <Grid Grid.Column="0" Grid.RowSpan="2" Background="#1b2339">
+
+
+            <Button x:Name="AdminButton"
+        Style="{StaticResource AdminMenuButtonStyle}" 
+        Width="50" Height="50"
+        Margin="15,15,0,0"
+        HorizontalAlignment="Left"
+        VerticalAlignment="Top"
+        Click="AdminButton_Click"
+        ToolTip="Админ-панель">
+                <materialDesign:PackIcon Kind="ShieldLock" 
+                           Width="24" 
+                           Height="24"/>
+            </Button>
+
+
+            <!-- Popup при наведении -->
+            <Popup x:Name="AdminPopup"
+           PlacementTarget="{Binding ElementName=AdminButton}"
+           Placement="Right"
+           StaysOpen="False"
+           AllowsTransparency="True"
+           PopupAnimation="Fade">
+                <Border Background="#252c43"
+                CornerRadius="4"
+                Padding="8,4"
+                Margin="5,0,0,0">
+                    <TextBlock Text="Админ-панель" 
+                     Foreground="#e0e8ff"
+                     FontSize="12"/>
+                </Border>
+            </Popup>
+
+            <StackPanel Orientation="Vertical" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="0,10">
+                <Border Height="60" Background="Transparent"/>
+
+                <Button x:Name="TimesheetButton" Style="{StaticResource MenuButtonStyle}" Margin="10,0,10,20" HorizontalAlignment="Stretch" Click="TimesheetButton_Click">
+                    <Grid VerticalAlignment="Stretch">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <materialDesign:PackIcon Kind="Account" Width="24" Height="24" 
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" 
+                                               HorizontalAlignment="Center" Grid.Row="0"/>
+                        <TextBlock Text="Занятость" Style="{StaticResource MenuTextStyle}" Grid.Row="1"/>
+                    </Grid>
+                </Button>
+                <Border Height="1" Width="auto" Margin="20,0">
+                    <Rectangle Height="1">
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#1b2339" Offset="1"/>
+                                <GradientStop Color="Transparent" Offset="0"/>
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
+                </Border>
+
+                <Button x:Name="ProjectButton" Style="{StaticResource MenuButtonStyle}" Margin="10,20,10,20" HorizontalAlignment="Stretch" Click="ProjectButton_Click">
+                    <Grid VerticalAlignment="Stretch">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <materialDesign:PackIcon Kind="Folder" Width="24" Height="24" 
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" 
+                                               HorizontalAlignment="Center" Grid.Row="0"/>
+                        <TextBlock Text="Проекты" Style="{StaticResource MenuTextStyle}" Grid.Row="1"/>
+                    </Grid>
+                </Button>
+                <Border Height="1" Width="auto" Margin="20,0">
+                    <Rectangle Height="1">
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#1b2339" Offset="1"/>
+                                <GradientStop Color="Transparent" Offset="0"/>
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
+                </Border>
+
+                <Button x:Name="ProjectStageButton" Style="{StaticResource MenuButtonStyle}" Margin="10,20,10,20" HorizontalAlignment="Stretch" Click="ProjectStageButton_Click">
+                    <Grid VerticalAlignment="Stretch">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <materialDesign:PackIcon Kind="ChartTimelineVariant" Width="24" Height="24" 
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" 
+                                               HorizontalAlignment="Center" Grid.Row="0"/>
+                        <TextBlock Text="Стадии проектов" Style="{StaticResource MenuTextStyle}" Grid.Row="1"/>
+                    </Grid>
+                </Button>
+                <Border Height="1" Width="auto" Margin="20,0">
+                    <Rectangle Height="1">
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#1b2339" Offset="1"/>
+                                <GradientStop Color="Transparent" Offset="0"/>
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
+                </Border>
+
+                <Button x:Name="TaskButton" Style="{StaticResource MenuButtonStyle}" Margin="10,20,10,20" HorizontalAlignment="Stretch" Click="TaskButton_Click">
+                    <Grid VerticalAlignment="Stretch">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <materialDesign:PackIcon Kind="FormatListChecks" Width="24" Height="24" 
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" 
+                                               HorizontalAlignment="Center" Grid.Row="0"/>
+                        <TextBlock Text="Задачи" Style="{StaticResource MenuTextStyle}" Grid.Row="1"/>
+                    </Grid>
+                </Button>
+                <Border Height="1" Width="auto" Margin="20,0">
+                    <Rectangle Height="1">
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#1b2339" Offset="1"/>
+                                <GradientStop Color="Transparent" Offset="0"/>
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
+                </Border>
+
+                <Button x:Name="TeamButton" Style="{StaticResource MenuButtonStyle}" Margin="10,20,10,20" HorizontalAlignment="Stretch" Click="TeamButton_Click">
+                    <Grid VerticalAlignment="Stretch">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <materialDesign:PackIcon Kind="AccountGroup" Width="24" Height="24" 
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" 
+                                               HorizontalAlignment="Center" Grid.Row="0"/>
+                        <TextBlock Text="Моя команда" Style="{StaticResource MenuTextStyle}" Grid.Row="1"/>
+                    </Grid>
+                </Button>
+                <Border Height="1" Width="auto" Margin="20,0">
+                    <Rectangle Height="1">
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#1b2339" Offset="1"/>
+                                <GradientStop Color="Transparent" Offset="0"/>
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
+                </Border>
+
+                <Button Style="{StaticResource MenuButtonStyle}" Margin="10,15,10,15" HorizontalAlignment="Stretch" Click="LogoutButton_Click">
+                    <Grid VerticalAlignment="Stretch">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <materialDesign:PackIcon Kind="ExitToApp" Width="24" Height="24" 
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" 
+                                               HorizontalAlignment="Center" Grid.Row="0"/>
+                        <TextBlock Text="Выйти" Style="{StaticResource MenuTextStyle}" Grid.Row="1"/>
+                    </Grid>
+                </Button>
+            </StackPanel>
+
+            <StackPanel Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,15">
+                <Grid x:Name="mainGrid" Width="140" Height="140" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Grid.Triggers>
+                        <EventTrigger RoutedEvent="PreviewMouseLeftButtonDown">
+                            <BeginStoryboard Storyboard="{StaticResource AvatarClickAnimation}"/>
+                        </EventTrigger>
+                    </Grid.Triggers>
+
+                    <Ellipse x:Name="circleFill" Width="140" Height="140">
+                        <Ellipse.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#3a5a9a" Offset="0"/>
+                                <GradientStop Color="#5fc4b8" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Ellipse.Fill>
+                        <Ellipse.Effect>
+                            <DropShadowEffect ShadowDepth="3" BlurRadius="15" Color="#1b2339" Opacity="0.8"/>
+                        </Ellipse.Effect>
+                    </Ellipse>
+
+                    <Image x:Name="AvatarImage" Source="../avatar/man1.png" Stretch="UniformToFill" Width="132" Height="132">
+                        <Image.Clip>
+                            <EllipseGeometry Center="66,66" RadiusX="66" RadiusY="66"/>
+                        </Image.Clip>
+                        <Image.Effect>
+                            <DropShadowEffect ShadowDepth="0" BlurRadius="10" Color="#5fc4b8" Opacity="0.5"/>
+                        </Image.Effect>
+                        <Image.RenderTransform>
+                            <ScaleTransform CenterX="66" CenterY="66"/>
+                        </Image.RenderTransform>
+                    </Image>
+
+                    <Ellipse x:Name="avatarOverlay" Width="132" Height="132" Fill="#1b2339" Opacity="0" MouseLeftButtonUp="Avatar_Click">
+                        <Ellipse.Clip>
+                            <EllipseGeometry Center="66,66" RadiusX="66" RadiusY="66"/>
+                        </Ellipse.Clip>
+                    </Ellipse>
+
+                    <Ellipse Width="20" Height="20" Fill="#5fc4b8" Stroke="#1b2339" StrokeThickness="2"
+             HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8"/>
+                </Grid>
+
+                <TextBlock Text="Нажмите для изменения" 
+                           Foreground="#a0a8c0" 
+                           FontSize="11" 
+                           HorizontalAlignment="Center" 
+                           Margin="0,5,0,0"
+                           FontStyle="Italic"
+                           Opacity="0.8"/>
+
+                <TextBlock x:Name="userName" Text="Aboba Nik2" 
+                           VerticalAlignment="Center" HorizontalAlignment="Center" 
+                           Foreground="White" FontSize="24" FontFamily="Segoe UI" FontWeight="Bold"
+                           Margin="0,5,0,0">
+                    <TextBlock.Effect>
+                        <DropShadowEffect ShadowDepth="2" BlurRadius="5" Color="Black" Opacity="0.3"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+            </StackPanel>
+        </Grid>
+
+        <Frame x:Name="ContentFrame" Grid.Column="1" Background="#222a40" Margin="-1,0,0,0">
+            <Frame.Effect>
+                <DropShadowEffect ShadowDepth="5" Direction="270" BlurRadius="10" Color="Black" Opacity="0.3"/>
+            </Frame.Effect>
+        </Frame>
+    </Grid>
+</Window>

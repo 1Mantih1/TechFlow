@@ -1,0 +1,518 @@
+﻿<Page x:Class="TechFlow.Pages.TaskDetailsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+      mc:Ignorable="d"
+      Title="TaskDetailsPage" Loaded="Page_Loaded"
+      Background="#1b2339">
+
+    <Page.Resources>
+        <!-- Modern Styles -->
+        <Style x:Key="ModernHeader" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="FontSize" Value="26"/>
+            <Setter Property="FontFamily" Value="Segoe UI Light"/>
+        </Style>
+
+        <Style x:Key="ModernIcon" TargetType="materialDesign:PackIcon">
+            <Setter Property="Width" Value="20"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Foreground" Value="#94A3B8"/>
+        </Style>
+
+        <Style x:Key="ModernFlatButton" TargetType="Button">
+            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+            <Setter Property="Margin" Value="8,0,0,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter x:Name="content" 
+                                            Content="{TemplateBinding Content}"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#334155"/>
+                                <Setter TargetName="content" Property="TextElement.Foreground" Value="#38BDF8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Message Bubble Base Style -->
+        <Style x:Key="MessageBubbleBase" TargetType="Border">
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="Margin" Value="8"/>
+            <Setter Property="MaxWidth" Value="400"/>
+        </Style>
+
+        <!-- Other User Message Style -->
+        <Style x:Key="OtherUserMessageBubble" TargetType="Border" BasedOn="{StaticResource MessageBubbleBase}">
+            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+        </Style>
+
+        <!-- User Name Style -->
+        <Style x:Key="UserNameStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+
+        <!-- Current User Name Style -->
+        <Style x:Key="CurrentUserNameStyle" TargetType="TextBlock" BasedOn="{StaticResource UserNameStyle}">
+            <Setter Property="Foreground" Value="#38BDF8"/>
+        </Style>
+
+        <!-- Message Text Style -->
+        <Style x:Key="MessageTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <!-- Message Time Style -->
+        <Style x:Key="MessageTimeStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Margin" Value="0,4,0,0"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+        </Style>
+
+        <!-- Image Style -->
+        <Style x:Key="MessageImageStyle" TargetType="Image">
+            <Setter Property="MaxWidth" Value="300"/>
+            <Setter Property="MaxHeight" Value="200"/>
+            <Setter Property="Margin" Value="0,8,0,0"/>
+            <Setter Property="Stretch" Value="Uniform"/>
+        </Style>
+
+        <!-- Modern TextBox Style -->
+        <Style x:Key="ModernTextBox" TargetType="TextBox">
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CaretBrush" Value="#38BDF8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="materialDesign:HintAssist.Hint" Value="Напишите сообщение..."/>
+            <Setter Property="materialDesign:HintAssist.Foreground" Value="#64748B"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Grid>
+                            <Border x:Name="border" 
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="8"
+                                    SnapsToDevicePixels="True">
+                                <ScrollViewer x:Name="PART_ContentHost"
+                                            Margin="{TemplateBinding Padding}"
+                                            VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="placeholder"
+                                    Text="{TemplateBinding materialDesign:HintAssist.Hint}"
+                                    Foreground="{TemplateBinding materialDesign:HintAssist.Foreground}"
+                                    Margin="12,0"
+                                    VerticalAlignment="Center"
+                                    Visibility="Collapsed"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Text" Value="">
+                                <Setter TargetName="placeholder" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
+    <Grid>
+        <Border CornerRadius="12" Margin="20" Background="#1E293B">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Modern Corporate Chat Header - Balanced Version -->
+                <Border Grid.Row="0" Background="#1E293B" CornerRadius="12,12,0,0" 
+        Margin="16,16,16,0" Padding="12" BorderThickness="0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Back Button -->
+                        <Button Grid.Column="0" 
+                Style="{StaticResource ModernFlatButton}"
+                Click="BackButton_Click"
+                VerticalAlignment="Center"
+                Margin="0,0,12,0">
+                            <materialDesign:PackIcon Kind="ArrowLeft" 
+                                   Foreground="#E2E8F0" 
+                                   Width="24" 
+                                   Height="24"/>
+                        </Button>
+
+                        <!-- Chat Info -->
+                        <StackPanel Grid.Column="1" 
+                   Orientation="Horizontal" 
+                   VerticalAlignment="Center">
+                            <!-- Icon with perfect alignment -->
+                            <Border Width="40" Height="40" 
+                    Background="#334155" 
+                    CornerRadius="8"
+                    Margin="0,0,12,0"
+                    VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="AccountGroup" 
+                                       Foreground="#38BDF8" 
+                                       Width="24" 
+                                       Height="24"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Center"/>
+                            </Border>
+
+                            <!-- Chat Details -->
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Техническая поддержка" 
+                           Foreground="#F8FAFC"
+                           FontFamily="Segoe UI Semibold"
+                           FontSize="16"/>
+
+                                <TextBlock Text="12 участников" 
+                           Foreground="#94A3B8" 
+                           FontSize="13"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Right Section - Useful Elements -->
+                        <StackPanel Grid.Column="2" 
+                   Orientation="Horizontal"
+                   HorizontalAlignment="Right"
+                   VerticalAlignment="Center">
+
+                            <!-- Last Activity Time -->
+                            <TextBlock Text="Последнее сообщение: 12:45"
+                       Foreground="#64748B"
+                       FontSize="12"
+                       VerticalAlignment="Center"
+                       Margin="0,0,12,0"/>
+
+                            <!-- Pinned Messages Indicator -->
+                            <Button Style="{StaticResource ModernFlatButton}"
+                    Background="Transparent"
+                    ToolTip="Закрепленные сообщения"
+                    Padding="4">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Pin" 
+                                           Foreground="#94A3B8" 
+                                           Width="16" 
+                                           Height="16"/>
+                                    <TextBlock Text="3" 
+                               Foreground="#38BDF8"
+                               FontSize="12"
+                               Margin="4,0,0,0"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                <ScrollViewer x:Name="MessagesScrollViewer" Grid.Row="1" Padding="16,0,16,16" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl x:Name="CommentList" Background="Transparent">
+                        <ItemsControl.ItemContainerStyle>
+                            <Style TargetType="ContentPresenter">
+                                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                <Setter Property="Margin" Value="8,8,8,4"/>
+                                <!-- Отступы вокруг каждого сообщения -->
+                            </Style>
+                        </ItemsControl.ItemContainerStyle>
+
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid x:Name="MessageContainer" 
+                      Background="Transparent"
+                      HorizontalAlignment="{Binding HorizontalAlignment}"
+                      MinHeight="60">
+
+                                    <!-- Основной контейнер сообщения -->
+                                    <Border x:Name="MessageBubble"
+                            CornerRadius="12"
+                            HorizontalAlignment="{Binding HorizontalAlignment}"
+                            VerticalAlignment="Top"
+                            Padding="16"
+                                        MaxWidth="360">
+                                        <!-- Уменьшено для учета отступов -->
+
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Верхняя строка с аватаром и именем -->
+                                            <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Top">
+                                                <!-- Аватар -->
+                                                <Border Width="36"  
+                                                    Height="36"
+                                        CornerRadius="18"
+                                        VerticalAlignment="Top"
+                                        Margin="0,0,12,0">
+                                                    <!-- Больший отступ -->
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <!-- Стиль аватара для других пользователей -->
+                                                            <Setter Property="Background" Value="#3B4758"/>
+                                                            <Setter Property="BorderBrush" Value="#4A5568"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+
+                                                            <!-- Стиль аватара для текущего пользователя -->
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding HorizontalAlignment}" Value="Right">
+                                                                    <Setter Property="Background" Value="#38BDF8"/>
+                                                                    <Setter Property="BorderThickness" Value="0"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <Image Source="{Binding ImagePath}" Stretch="UniformToFill"/>
+                                                </Border>
+
+                                                <!-- Имя и дата -->
+                                                <StackPanel>
+                                                    <TextBlock x:Name="UserNameText" 
+                                               Text="{Binding FirstName}"
+                                               Margin="0,0,0,4"> <!-- Увеличенный отступ -->
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <!-- Стиль имени для других пользователей -->
+                                                                <Setter Property="Foreground" Value="#CBD5E1"/>
+                                                                <Setter Property="FontFamily" Value="Segoe UI"/>
+                                                                <Setter Property="FontSize" Value="14"/>
+                                                                <Setter Property="FontWeight" Value="SemiBold"/>
+
+                                                                <!-- Стиль имени для текущего пользователя -->
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding HorizontalAlignment}" Value="Right">
+                                                                        <Setter Property="Foreground" Value="#38BDF8"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+
+                                                    <TextBlock Text="{Binding CreationDate, StringFormat='HH:mm • dd MMM yyyy'}"
+                                               Foreground="#94A3B8"
+                                               FontFamily="Segoe UI"
+                                               FontSize="11"
+                                               Margin="0,2,0,0"/>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- Текст сообщения -->
+                                            <TextBlock Grid.Row="1"
+                                       Text="{Binding CommentText}"
+                                       Foreground="#F1F5F9" 
+                                       FontFamily="Segoe UI"
+                                       FontSize="14"
+                                       TextWrapping="Wrap"
+                                       Margin="0,12,0,0"/> <!-- Увеличенный отступ -->
+                        </Grid>
+
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <!-- Стиль для других пользователей -->
+                                                <Setter Property="Background" Value="#2D3748"/>
+                                                <Setter Property="BorderBrush" Value="#3B4758"/>
+                                                <Setter Property="BorderThickness" Value="1"/>
+
+                                                <!-- Стиль для текущего пользователя -->
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HorizontalAlignment}" Value="Right">
+                                                        <Setter Property="Background" Value="#334155"/>
+                                                        <Setter Property="BorderThickness" Value="0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+
+                                    <!-- Эффект при наведении -->
+                                    <Border x:Name="HoverOverlay"
+                            CornerRadius="12"
+                            Background="Transparent"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            IsHitTestVisible="False"/>
+
+                                    <!-- Анимации при наведении -->
+                                    <Grid.Triggers>
+                                        <EventTrigger RoutedEvent="MouseEnter">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <ColorAnimation Storyboard.TargetName="HoverOverlay"
+                                                   Storyboard.TargetProperty="Background.Color"
+                                                   To="#0AFFFFFF"
+                                                   Duration="0:0:0.1"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                        <EventTrigger RoutedEvent="MouseLeave">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <ColorAnimation Storyboard.TargetName="HoverOverlay"
+                                                   Storyboard.TargetProperty="Background.Color"
+                                                   To="Transparent"
+                                                   Duration="0:0:0.2"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Grid.Triggers>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Message Input -->
+                <Border Grid.Row="2" Background="#1E293B" CornerRadius="0,0,12,12" Margin="16,0,16,16" 
+        BorderThickness="0" Padding="0" BorderBrush="#334155">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Attachments Panel -->
+                        <Border x:Name="AttachmentsPanel" Grid.Row="0" 
+                Background="#1E293B" CornerRadius="0,0,0,0" 
+                Margin="0" Padding="8,8,8,4"
+                Visibility="Collapsed">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Background="#334155" CornerRadius="8" Padding="8" Margin="0,0,8,0">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <materialDesign:PackIcon Kind="File" Foreground="#94A3B8" Width="16" Height="16" Margin="0,0,6,0"/>
+                                            <TextBlock Text="document.pdf" Foreground="#E2E8F0" FontSize="12"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+
+                        <!-- Input Area -->
+                        <Border Grid.Row="1" Background="#1E293B" Padding="12" BorderThickness="0" CornerRadius="0,0,12,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Attach Button -->
+                                <Button Grid.Column="0"
+                        VerticalAlignment="Center"
+                        Click="AddTaskFileButton_Click"
+                        ToolTip="Прикрепить файл"
+                        Style="{StaticResource ModernFlatButton}"
+                        Background="Transparent"
+                        Foreground="#94A3B8"
+                        Margin="0,0,8,0">
+                                    <materialDesign:PackIcon Kind="Attachment" 
+                                           Width="20" 
+                                           Height="20"
+                                           RenderTransformOrigin="0.5,0.5">
+                                        <materialDesign:PackIcon.RenderTransform>
+                                            <RotateTransform Angle="90"/>
+                                        </materialDesign:PackIcon.RenderTransform>
+                                    </materialDesign:PackIcon>
+                                </Button>
+
+                                <!-- Message TextBox -->
+                                <Border Grid.Column="1" 
+                        Background="#334155" 
+                        CornerRadius="20" 
+                        Padding="4"
+                        Margin="0,0,12,0"
+                        VerticalAlignment="Center">
+                                    <TextBox x:Name="CommentTextBox" 
+                             Style="{StaticResource ModernTextBox}"
+                             AcceptsReturn="True"
+                             MinHeight="36"
+                             VerticalContentAlignment="Center"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Foreground="#F8FAFC"
+                             materialDesign:HintAssist.Hint="Написать сообщение..."
+                             materialDesign:HintAssist.Foreground="#64748B"
+                             materialDesign:TextFieldAssist.UnderlineBrush="Transparent"/>
+                                </Border>
+
+                                <!-- Send Button -->
+                                <Button Grid.Column="2"
+                        VerticalAlignment="Center"
+                        Click="AddCommentButton_Click"
+                        ToolTip="Отправить"
+                        Width="36"
+                        Height="36"
+                        Padding="0">
+                                    <Grid>
+                                        <Ellipse Fill="#38BDF8"/>
+                                        <materialDesign:PackIcon Kind="Send" 
+                                               Foreground="#0F172A" 
+                                               Width="18" 
+                                               Height="18"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Grid>
+                                                            <ContentPresenter/>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Opacity" Value="0.9"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</Page>
