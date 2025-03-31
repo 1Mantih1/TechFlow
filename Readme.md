@@ -153,22 +153,3 @@ dotnet publish -c Release -r win-x64 --self-contained true
 ```
 
 Готовый файл будет находиться в папке **bin/Release/net6.0-windows/win-x64/publish**.
-
-## 6. (Опционально) Создание службы Windows (для серверного развертывания)
-
-1. Создайте службу Windows:
-
-```sh
-sc create TechFlowService binPath="C:\Path\To\TechFlow.exe" start=auto
-```
-
-2. Запустите службу:
-
-```sh
-sc start TechFlowService
-```
-
-3. Остановить службу:
-
-```sh
-sc stop TechFlowService
