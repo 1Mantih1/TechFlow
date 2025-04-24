@@ -10,6 +10,8 @@ namespace TechFlow.Classes
         public DateTime OrganizationDate { get; set; }
         public DateTime? CompletionDate { get; set; }
 
+        public Team() { }
+
         public Team(int teamId, string teamName, string teamDescription, DateTime organizationDate, DateTime? completionDate)
         {
             TeamId = teamId;

@@ -3,10 +3,9 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      xmlns:local="clr-namespace:TechFlow.Pages"
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       mc:Ignorable="d" 
-      d:DesignHeight="450" d:DesignWidth="800"
+      d:DesignHeight="800" d:DesignWidth="1200"
       Title="ProjectStageDetailsPage"
       Background="#1b2339">
 
@@ -58,8 +57,9 @@
 
         <Style x:Key="DetailText" TargetType="TextBlock">
             <Setter Property="Foreground" Value="#94A3B8"/>
-            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontSize" Value="14"/>
             <Setter Property="Margin" Value="0 4 0 0"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
 
         <Style x:Key="StatusBadge" TargetType="Border">
@@ -69,173 +69,198 @@
             <Setter Property="HorizontalAlignment" Value="Left"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="MinWidth" Value="100"/>
-            <Setter Property="Height" Value="28"/>
+            <Setter Property="Height" Value="32"/>
         </Style>
 
-        <Style x:Key="RoundedImageContainer" TargetType="Border">
-            <Setter Property="Width" Value="200"/>
-            <Setter Property="Height" Value="200"/>
-            <Setter Property="Margin" Value="0 16"/>
-            <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Style x:Key="InfoCard" TargetType="Border">
             <Setter Property="Background" Value="#334155"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Margin" Value="0 8 0 0"/>
+        </Style>
+
+        <Style x:Key="ImportantValue" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#38BDF8"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <Style x:Key="ScrollableTextBlock" TargetType="ScrollViewer">
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="MaxHeight" Value="200"/>
+            <Setter Property="Padding" Value="4"/>
+        </Style>
+
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin" Value="0 0 0 4"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+        </Style>
+
+        <Style x:Key="ValueContainer" TargetType="Border">
             <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="materialDesign:ShadowAssist.ShadowDepth" Value="Depth1"/>
+            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Margin" Value="0 4 0 0"/>
         </Style>
     </Page.Resources>
 
     <Grid>
-        <Border CornerRadius="12" Margin="20" Background="#1E293B">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+        <ScrollViewer x:Name="MainScrollViewer" 
+                      VerticalScrollBarVisibility="Auto" 
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="0">
+            <Border CornerRadius="12" Margin="20" Background="#1E293B">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                <Border Grid.Row="0" Background="#334155" CornerRadius="8" Margin="16" Padding="16">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
+                    <Border Grid.Row="0" Background="#334155" CornerRadius="8" Margin="16" Padding="16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
 
-                        <Button x:Name="ButtonBack" 
-                                Grid.Column="0"
-                                Style="{StaticResource BackButtonStyle}"
-                                Click="ButtonBack_Click"
-                                VerticalAlignment="Center"
-                                MinWidth="120">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <materialDesign:PackIcon Kind="ArrowLeft" 
-                                                       Width="20"
-                                                       Height="20"
-                                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                       VerticalAlignment="Center"
-                                                       Margin="0,0,3,0"/>
-                                <TextBlock Text="Назад" 
-                                           VerticalAlignment="Center"
-                                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                            <Button x:Name="ButtonBack" 
+                                    Grid.Column="0"
+                                    Style="{StaticResource BackButtonStyle}"
+                                    Click="ButtonBack_Click"
+                                    VerticalAlignment="Center"
+                                    MinWidth="120">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="ArrowLeft" 
+                                                           Width="20"
+                                                           Height="20"
+                                                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                           VerticalAlignment="Center"
+                                                           Margin="0,0,3,0"/>
+                                    <TextBlock Text="Назад" 
+                                               VerticalAlignment="Center"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                                </StackPanel>
+                            </Button>
+
+                            <StackPanel Grid.Column="1" 
+                                        Orientation="Vertical" 
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center">
+                                <TextBlock Text="Детали этапа" 
+                                           Style="{StaticResource ModernHeader}"
+                                           Foreground="#38BDF8"/>
+                                <TextBlock Text="{Binding StageName}" 
+                                           Foreground="#E2E8F0"
+                                           FontSize="20"
+                                           Margin="0,8,0,0"
+                                           TextTrimming="CharacterEllipsis"
+                                           MaxWidth="600"
+                                           HorizontalAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center"/>
                             </StackPanel>
-                        </Button>
 
-                        <StackPanel Grid.Column="1" 
-                                    Orientation="Vertical" 
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center">
-                            <TextBlock Text="Детали этапа" 
-                                       Style="{StaticResource ModernHeader}"
-                                       Foreground="#38BDF8"/>
-                            <TextBlock Text="{Binding StageName}" 
-                                       Foreground="#E2E8F0"
-                                       FontSize="20"
-                                       Margin="0,8,0,0"/>
-                        </StackPanel>
+                            <Border Grid.Column="2" Width="{Binding ActualWidth, ElementName=ButtonBack}"/>
+                        </Grid>
+                    </Border>
 
-                        <Border Grid.Column="2" Width="{Binding ActualWidth, ElementName=ButtonBack}"/>
-                    </Grid>
-                </Border>
+                    <Border Grid.Row="1" Margin="16" Background="#1E293B" CornerRadius="8" 
+                            BorderBrush="#334155" BorderThickness="1">
+                        <Grid Margin="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
 
-                <Border Grid.Row="1" Margin="16" Background="#1E293B" CornerRadius="8" 
-                        BorderBrush="#334155" BorderThickness="1">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="2*" />
-                            <ColumnDefinition Width="3*" />
-                        </Grid.ColumnDefinitions>
+                            <Border Grid.Row="0" 
+                                    Style="{StaticResource InfoCard}" Margin="16,16,16,8">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                        <StackPanel Grid.Column="0" Margin="20">
-                            <Border Style="{StaticResource RoundedImageContainer}">
-                                <Border.Clip>
-                                    <RectangleGeometry Rect="0,0,200,200" RadiusX="4" RadiusY="4"/>
-                                </Border.Clip>
-                                <Image Source="{Binding ProjectImage}" 
-                                       Stretch="UniformToFill"/>
+                                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                        <TextBlock Text="Проект" Style="{StaticResource FieldLabel}"/>
+                                        <Border Style="{StaticResource ValueContainer}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="FileDocument" Width="18" Height="18" 
+                                                                       Foreground="#64748B" VerticalAlignment="Center" 
+                                                                       Margin="0,0,8,0"/>
+                                                <TextBlock Text="{Binding ProjectName}" 
+                                                           Style="{StaticResource ImportantValue}"
+                                                           MaxWidth="200"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" Margin="8,0,8,0">
+                                        <TextBlock Text="Статус" Style="{StaticResource FieldLabel}"/>
+                                        <Border Style="{StaticResource StatusBadge}" Margin="0,4,0,0">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Circle" Width="10" Height="10" 
+                                                                       Foreground="#38BDF8" VerticalAlignment="Center" 
+                                                                       Margin="0,0,8,0"/>
+                                                <TextBlock Text="{Binding Status}" 
+                                                           Style="{StaticResource ImportantValue}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           MaxWidth="120"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2" Margin="8,0,8,0">
+                                        <TextBlock Text="Начало" Style="{StaticResource FieldLabel}"/>
+                                        <Border Style="{StaticResource ValueContainer}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="CalendarStart" Width="18" Height="18" 
+                                                                       Foreground="#64748B" VerticalAlignment="Center" 
+                                                                       Margin="0,0,8,0"/>
+                                                <TextBlock Text="{Binding StartDate, StringFormat='dd.MM.yyyy'}" 
+                                                           Style="{StaticResource ImportantValue}"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="3" Margin="8,0,0,0">
+                                        <TextBlock Text="Завершение" Style="{StaticResource FieldLabel}"/>
+                                        <Border Style="{StaticResource ValueContainer}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="CalendarEnd" Width="18" Height="18" 
+                                                                       Foreground="#64748B" VerticalAlignment="Center" 
+                                                                       Margin="0,0,8,0"/>
+                                                <TextBlock Text="{Binding EndDate, StringFormat='dd.MM.yyyy'}" 
+                                                           Style="{StaticResource ImportantValue}"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Grid>
                             </Border>
 
-                            <TextBlock Text="Общая информация" Style="{StaticResource SectionHeader}"/>
-
-                            <StackPanel Orientation="Horizontal" Margin="0 8 0 0">
-                                <materialDesign:PackIcon Kind="FileDocument" 
-                                                       Width="20"
-                                                       Height="20"
-                                                       Foreground="#64748B"
-                                                       VerticalAlignment="Center"
-                                                       Margin="0,0,8,0"/>
-                                <StackPanel>
-                                    <TextBlock Text="Проект" Style="{StaticResource SectionHeader}" Margin="0"/>
-                                    <TextBlock Text="{Binding ProjectName}" Style="{StaticResource DetailText}"/>
-                                </StackPanel>
-                            </StackPanel>
-
-                            <StackPanel Orientation="Horizontal" Margin="0 8 0 0">
-                                <materialDesign:PackIcon Kind="CircleSlice8" 
-                                                       Width="20"
-                                                       Height="20"
-                                                       Foreground="#64748B"
-                                                       VerticalAlignment="Center"
-                                                       Margin="0,0,8,0"/>
-                                <StackPanel>
-                                    <TextBlock Text="Статус" Style="{StaticResource SectionHeader}" Margin="0"/>
-                                    <Border Style="{StaticResource StatusBadge}" Margin="0 4 0 0">
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <materialDesign:PackIcon Kind="Circle" 
-                                                                   Width="8"
-                                                                   Height="8"
-                                                                   Foreground="#38BDF8"
-                                                                   VerticalAlignment="Center"
-                                                                   Margin="0,0,8,0"/>
-                                            <TextBlock Text="{Binding Status}" 
-                                                    Foreground="#38BDF8"
-                                                    FontSize="12"
-                                                    FontFamily="Segoe UI Semibold"
-                                                    VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Border>
-                                </StackPanel>
-                            </StackPanel>
-
-                            <StackPanel Orientation="Horizontal" Margin="0 8 0 0">
-                                <materialDesign:PackIcon Kind="CalendarStart" 
-                                                       Width="20"
-                                                       Height="20"
-                                                       Foreground="#64748B"
-                                                       VerticalAlignment="Center"
-                                                       Margin="0,0,8,0"/>
-                                <StackPanel>
-                                    <TextBlock Text="Дата начала" Style="{StaticResource SectionHeader}" Margin="0"/>
-                                    <TextBlock Text="{Binding StartDate, StringFormat=d}" Style="{StaticResource DetailText}"/>
-                                </StackPanel>
-                            </StackPanel>
-
-                            <StackPanel Orientation="Horizontal" Margin="0 8 0 0">
-                                <materialDesign:PackIcon Kind="CalendarEnd" 
-                                                       Width="20"
-                                                       Height="20"
-                                                       Foreground="#64748B"
-                                                       VerticalAlignment="Center"
-                                                       Margin="0,0,8,0"/>
-                                <StackPanel>
-                                    <TextBlock Text="Дата завершения" Style="{StaticResource SectionHeader}" Margin="0"/>
-                                    <TextBlock Text="{Binding EndDate, StringFormat=d}" Style="{StaticResource DetailText}"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="1" Margin="20">
-                            <TextBlock Text="Описание этапа" Style="{StaticResource SectionHeader}"/>
-                            <Border Background="#334155" Padding="16" CornerRadius="8" MaxHeight="400">
-                                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                    <TextBlock Text="{Binding ProjectStageDescription}" 
+                            <StackPanel Grid.Row="1" Margin="16,0,16,16">
+                                <TextBlock Text="Описание этапа" Style="{StaticResource SectionHeader}"/>
+                                <Border Style="{StaticResource InfoCard}">
+                                    <ScrollViewer Style="{StaticResource ScrollableTextBlock}">
+                                        <TextBlock Text="{Binding ProjectStageDescription}" 
                                                TextWrapping="Wrap" 
-                                               Foreground="#94A3B8"
-                                               FontSize="16"
+                                               Style="{StaticResource DetailText}"
                                                LineHeight="24"/>
-                                </ScrollViewer>
-                            </Border>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-            </Grid>
-        </Border>
+                                    </ScrollViewer>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+        </ScrollViewer>
     </Grid>
 </Page>

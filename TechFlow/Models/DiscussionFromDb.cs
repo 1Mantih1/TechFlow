@@ -1,9 +1,6 @@
 ﻿using Npgsql;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using TechFlow.Classes;
 
@@ -11,7 +8,6 @@ namespace TechFlow.Models
 {
     public class DiscussionFromDb
     {
-        // Загрузка всех обсуждений, связанных с задачей
         public List<Discussion> LoadDiscussions(int taskId)
         {
             List<Discussion> discussions = new List<Discussion>();
@@ -35,11 +31,11 @@ namespace TechFlow.Models
                             while (reader.Read())
                             {
                                 discussions.Add(new Discussion(
-                                    reader.GetInt32(0),  // discussion_id
-                                    reader.GetString(1), // discussion_name
-                                    reader.GetDateTime(2), // creation_date
-                                    reader.IsDBNull(3) ? (DateTime?)null : reader.GetDateTime(3), // completion_date
-                                    reader.GetInt32(4)  // task_id
+                                    reader.GetInt32(0),
+                                    reader.GetString(1),
+                                    reader.GetDateTime(2),
+                                    reader.IsDBNull(3) ? (DateTime?)null : reader.GetDateTime(3), 
+                                    reader.GetInt32(4) 
                                 ));
                             }
                         }
@@ -55,7 +51,6 @@ namespace TechFlow.Models
         }
 
 
-        // Загрузка комментариев для обсуждения
         public List<DiscussionComment> LoadComments(int discussionId)
         {
             List<DiscussionComment> comments = new List<DiscussionComment>();
@@ -104,7 +99,6 @@ namespace TechFlow.Models
             return comments;
         }
 
-        // Добавление нового комментария
         public void AddComment(string commentText, int discussionId, int employeeId)
         {
             using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
@@ -113,13 +107,14 @@ namespace TechFlow.Models
                 {
                     connection.Open();
                     string sqlExp = @"
-                INSERT INTO public.discussion_comment (comment_text, creation_date, discussion_id, employee_id)
+                INSERT INTO public.discussion_comment 
+                (comment_text, creation_date, discussion_id, employee_id)
                 VALUES (@commentText, @creationDate, @discussionId, @employeeId);";
 
                     using (NpgsqlCommand command = new NpgsqlCommand(sqlExp, connection))
                     {
                         command.Parameters.AddWithValue("@commentText", commentText);
-                        command.Parameters.AddWithValue("@creationDate", DateTime.UtcNow);
+                        command.Parameters.AddWithValue("@creationDate", DateTime.Now);
                         command.Parameters.AddWithValue("@discussionId", discussionId);
                         command.Parameters.AddWithValue("@employeeId", employeeId);
 
@@ -132,5 +127,50 @@ namespace TechFlow.Models
                 }
             }
         }
+
+        public User GetEmployeeById(int employeeId)
+        {
+            User employee = null;
+
+            using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
+            {
+                try
+                {
+                    connection.Open();
+
+                    string sqlExp = @"
+                SELECT employee_id, first_name, last_name, image_path
+                FROM public.employee
+                WHERE employee_id = @employeeId;";
+
+                    using (NpgsqlCommand command = new NpgsqlCommand(sqlExp, connection))
+                    {
+                        command.Parameters.AddWithValue("@employeeId", employeeId);
+
+                        using (NpgsqlDataReader reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                employee = new User
+                                {
+                                    UserId = Convert.ToInt32(reader["employee_id"]),
+                                    FirstName = reader["first_name"].ToString(),
+                                    LastName = reader["last_name"].ToString(),
+                                    ImagePath = reader["image_path"].ToString()
+                                };
+                            }
+                        }
+                    }
+                }
+                catch (NpgsqlException ex)
+                {
+                    MessageBox.Show("Ошибка получения сотрудника: " + ex.Message);
+                }
+            }
+
+            return employee;
+        }
+
+
     }
 }

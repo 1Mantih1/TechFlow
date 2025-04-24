@@ -4,97 +4,89 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TechFlow.Windows"
+        xmlns:classes="clr-namespace:TechFlow.Classes"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="Authorization" 
-        Height="600" Width="1000" Background="#1b2339"
-        WindowStartupLocation="CenterScreen">
+        Height="800" Width="1000" 
+        MinHeight="600" MinWidth="900"
+        WindowStartupLocation="CenterScreen"
+        Background="Transparent"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        TextOptions.TextRenderingMode="ClearType"
+        SizeChanged="Window_SizeChanged">
+
+    <Window.Clip>
+        <RectangleGeometry Rect="0,0,1000,800" RadiusX="12" RadiusY="12"/>
+    </Window.Clip>
 
     <Window.Resources>
+        <Color x:Key="PrimaryColor">#5fc4b8</Color>
+        <Color x:Key="DarkPrimaryColor">#3d8f7a</Color>
+        <Color x:Key="BackgroundColor">#1b2339</Color>
+        <Color x:Key="SecondaryBackgroundColor">#252c43</Color>
+        <Color x:Key="TextColor">#E0E0E0</Color>
+        <Color x:Key="LightTextColor">#FFFFFF</Color>
+        <Color x:Key="PlaceholderColor">#7f7f7f</Color>
+        <Color x:Key="ErrorColor">#FF5252</Color>
+        <Color x:Key="HoverColor">#3a4a6b</Color>
+        <Color x:Key="AccentColor">#6d5fc4</Color>
 
-        <Style x:Key="VisiblePasswordTextBoxStyle" TargetType="TextBox">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="FontSize" Value="16" />
-            <Setter Property="FontFamily" Value="Segoe UI" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="10,5" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Grid>
-                            <Border Background="Transparent" CornerRadius="8" Padding="5">
-                                <Grid>
-                                    <ScrollViewer x:Name="PART_ContentHost" />
-                                    <Border x:Name="UnderlineBorder" Background="#5fc4b8" Height="2" VerticalAlignment="Bottom" Margin="0,0,0,-2" Opacity="0" />
-                                </Grid>
-                            </Border>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Opacity" Value="1" TargetName="UnderlineBorder" />
-                            </Trigger>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="Opacity" Value="1" TargetName="UnderlineBorder" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+        <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
+        <SolidColorBrush x:Key="DarkPrimaryBrush" Color="{StaticResource DarkPrimaryColor}"/>
+        <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}"/>
+        <SolidColorBrush x:Key="SecondaryBackgroundBrush" Color="{StaticResource SecondaryBackgroundColor}"/>
+        <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
+        <SolidColorBrush x:Key="LightTextBrush" Color="{StaticResource LightTextColor}"/>
+        <SolidColorBrush x:Key="PlaceholderBrush" Color="{StaticResource PlaceholderColor}"/>
+        <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}"/>
+        <SolidColorBrush x:Key="HoverBrush" Color="{StaticResource HoverColor}"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+        <SolidColorBrush x:Key="CaretBrush" Color="White"/>
+
+        <SolidColorBrush x:Key="WindowHeaderBrush" Color="#252C43"/>
+        <SolidColorBrush x:Key="WindowButtonHoverBrush" Color="#3a4a6b"/>
+        <SolidColorBrush x:Key="WindowButtonPressedBrush" Color="#5fc4b8"/>
+
+        <Style x:Key="WindowHeaderStyle" TargetType="Grid">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Background" Value="{StaticResource WindowHeaderBrush}"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
         </Style>
 
-        <Style x:Key="MenuButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Padding" Value="10,5" />
-            <Setter Property="HorizontalContentAlignment" Value="Center" />
-            <Setter Property="FontSize" Value="16" />
-            <Setter Property="FontWeight" Value="Bold" />
+        <Style x:Key="WindowTitleStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="15,0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style x:Key="WindowButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" 
-                        Background="{TemplateBinding Background}" 
-                        BorderBrush="{TemplateBinding BorderBrush}" 
-                        BorderThickness="0" 
-                        CornerRadius="5">
-                            <Grid>
-                                <!-- Градиентный фон -->
-                                <Border x:Name="gradientBorder" 
-                                Background="#252c43" 
-                                CornerRadius="5">
-                                </Border>
-                                <!-- Текст кнопки -->
-                                <ContentPresenter x:Name="contentPresenter" 
-                                          HorizontalAlignment="Center" 
-                                          VerticalAlignment="Center" />
-                            </Grid>
+                        <Border Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <!-- Анимация при наведении -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" TargetName="gradientBorder">
-                                    <Setter.Value>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                            <GradientStop Color="#7fd8cc" Offset="0" />
-                                            <GradientStop Color="#5caa95" Offset="1" />
-                                        </LinearGradientBrush>
-                                    </Setter.Value>
-                                </Setter>
-                                <Setter Property="Opacity" Value="0.9" TargetName="gradientBorder" />
+                                <Setter Property="Background" Value="{StaticResource WindowButtonHoverBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
                             </Trigger>
-                            <!-- Анимация при нажатии -->
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" TargetName="gradientBorder">
-                                    <Setter.Value>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                            <GradientStop Color="#4fa89c" Offset="0" />
-                                            <GradientStop Color="#3a7c6a" Offset="1" />
-                                        </LinearGradientBrush>
-                                    </Setter.Value>
-                                </Setter>
-                                <Setter Property="Opacity" Value="0.8" TargetName="gradientBorder" />
+                                <Setter Property="Background" Value="{StaticResource WindowButtonPressedBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -102,69 +94,54 @@
             </Setter>
         </Style>
 
-        <Style x:Key="VisiblePasswordField" TargetType="TextBox">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="FontSize" Value="16" />
-            <Setter Property="FontFamily" Value="Segoe UI" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="10,5" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Grid>
-                            <Border Background="Transparent" CornerRadius="8" Padding="5">
-                                <Grid>
-                                    <ScrollViewer x:Name="PART_ContentHost" />
-                                    <Border x:Name="UnderlineBorder" Background="#5fc4b8" Height="2" VerticalAlignment="Bottom" Margin="0,0,0,-2" Opacity="0" />
-                                </Grid>
-                            </Border>
-                            <TextBlock x:Name="PlaceholderText" Text="Введите пароль" Foreground="#7f7f7f" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed" />
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Opacity" Value="1" TargetName="UnderlineBorder" />
-                            </Trigger>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="Opacity" Value="1" TargetName="UnderlineBorder" />
-                            </Trigger>
-                            <Trigger Property="Text" Value="">
-                                <Setter Property="Visibility" Value="Visible" TargetName="PlaceholderText" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <!-- Стиль для TextBox -->
         <Style x:Key="ModernTextBoxStyle" TargetType="TextBox">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="FontSize" Value="16" />
-            <Setter Property="FontFamily" Value="Segoe UI" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="10,5" />
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="CaretBrush" Value="{StaticResource CaretBrush}"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8,8"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <Grid>
-                            <Border Background="Transparent" CornerRadius="8" Padding="5">
+                            <Border x:Name="border" 
+                                    Background="{StaticResource SecondaryBackgroundBrush}" 
+                                    CornerRadius="6,6,0,0"
+                                    Padding="1">
                                 <Grid>
-                                    <ScrollViewer x:Name="PART_ContentHost" />
-                                    <Border x:Name="UnderlineBorder" Background="#5fc4b8" Height="2" VerticalAlignment="Bottom" Margin="0,0,0,-2" Opacity="0" />
+                                    <Border Background="{TemplateBinding Background}" 
+                                            CornerRadius="5,5,0,0">
+                                        <ScrollViewer x:Name="PART_ContentHost"
+                                                      Margin="{TemplateBinding Padding}"
+                                                      VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock x:Name="PlaceholderText" 
+                                               Text="{TemplateBinding Tag}" 
+                                               Foreground="{StaticResource PlaceholderBrush}" 
+                                               VerticalAlignment="Center" 
+                                               Margin="10,0,10,0" 
+                                               Visibility="Collapsed"/>
                                 </Grid>
                             </Border>
-                            <TextBlock x:Name="PlaceholderText" Text="Введите логин или email" Foreground="#7f7f7f" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed" />
+                            <Border x:Name="UnderlineBorder" 
+                                    Background="{StaticResource PrimaryBrush}" 
+                                    Height="2" 
+                                    VerticalAlignment="Bottom" 
+                                    Margin="0,0,0,-2"/>
                         </Grid>
                         <ControlTemplate.Triggers>
+                            <Trigger Property="Text" Value="">
+                                <Setter Property="Visibility" Value="Visible" TargetName="PlaceholderText"/>
+                            </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Opacity" Value="1" TargetName="UnderlineBorder" />
+                                <Setter Property="Background" Value="{StaticResource HoverBrush}" TargetName="border"/>
                             </Trigger>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="Opacity" Value="1" TargetName="UnderlineBorder" />
-                            </Trigger>
-                            <Trigger Property="Text" Value="">
-                                <Setter Property="Visibility" Value="Visible" TargetName="PlaceholderText" />
+                                <Setter Property="Background" Value="{StaticResource HoverBrush}" TargetName="border"/>
+                                <Setter Property="Foreground" Value="White" TargetName="PlaceholderText"/>
+                                <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -172,32 +149,101 @@
             </Setter>
         </Style>
 
-        <!-- Стиль для PasswordBox -->
         <Style x:Key="ModernPasswordBoxStyle" TargetType="PasswordBox">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="FontSize" Value="16" />
-            <Setter Property="FontFamily" Value="Segoe UI" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="10,5" />
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8,8"/>
+            <Setter Property="CaretBrush" Value="White"/>
+            <Setter Property="classes:PasswordBoxHelper.PasswordLength" 
+            Value="{Binding Password.Length, RelativeSource={RelativeSource Self}, Mode=OneWay}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="PasswordBox">
                         <Grid>
-                            <Border Background="Transparent" CornerRadius="8" Padding="5">
+                            <Border x:Name="border" 
+                            Background="{StaticResource SecondaryBackgroundBrush}" 
+                            CornerRadius="6,6,0,0"
+                            Padding="1">
                                 <Grid>
-                                    <ScrollViewer x:Name="PART_ContentHost" />
-                                    <Border x:Name="UnderlineBorder" Background="#5fc4b8" Height="2" VerticalAlignment="Bottom" Margin="0,0,0,-2" Opacity="0" />
+                                    <Border Background="{TemplateBinding Background}" 
+                                    CornerRadius="5,5,0,0">
+                                        <ScrollViewer x:Name="PART_ContentHost"
+                                              Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock x:Name="PlaceholderText" 
+                                       Text="{TemplateBinding Tag}" 
+                                       Foreground="{StaticResource PlaceholderBrush}" 
+                                       VerticalAlignment="Center" 
+                                       Margin="10,0,0,0"
+                                       Visibility="Collapsed"/>
                                 </Grid>
                             </Border>
-                            <TextBlock x:Name="PlaceholderText" Text="Введите пароль" Foreground="#7f7f7f" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Visible" />
+                            <Border x:Name="UnderlineBorder" 
+                            Background="{StaticResource PrimaryBrush}" 
+                            Height="2" 
+                            VerticalAlignment="Bottom" 
+                            Margin="0,0,0,-2"/>
                         </Grid>
                         <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter Property="Cursor" Value="IBeam"/>
+                                <Setter TargetName="PART_ContentHost" Property="Cursor" Value="IBeam"/>
+                            </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Opacity" Value="1" TargetName="UnderlineBorder" />
+                                <Setter Property="Background" Value="{StaticResource HoverBrush}" TargetName="border"/>
                             </Trigger>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="Opacity" Value="1" TargetName="UnderlineBorder" />
+                                <Setter Property="Background" Value="{StaticResource HoverBrush}" TargetName="border"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Foreground" Value="White" TargetName="PlaceholderText"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding Path=(classes:PasswordBoxHelper.PasswordLength), RelativeSource={RelativeSource Self}}" Value="0">
+                                <Setter Property="Visibility" Value="Visible" TargetName="PlaceholderText"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Path=(classes:PasswordBoxHelper.PasswordLength), RelativeSource={RelativeSource Self}}" Value="1">
+                                <Setter Property="Visibility" Value="Collapsed" TargetName="PlaceholderText"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="VisiblePasswordTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource ModernTextBoxStyle}">
+            <Setter Property="FontFamily" Value="Consolas"/>
+        </Style>
+
+        <Style x:Key="MenuButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+            <Setter Property="Padding" Value="15,10"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="0" 
+                                CornerRadius="8">
+                            <ContentPresenter x:Name="contentPresenter" 
+                                      HorizontalAlignment="Center" 
+                                      VerticalAlignment="Center"
+                                      Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{StaticResource DarkPrimaryBrush}" TargetName="border"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#2a7a6a" TargetName="border"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -205,158 +251,758 @@
             </Setter>
         </Style>
 
-        <!-- Стиль для текстовых блоков с надписями -->
-        <Style x:Key="SoftTextBlockStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#E0E0E0" />
-            <Setter Property="FontSize" Value="20" />
-            <Setter Property="FontFamily" Value="Segoe UI" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Opacity" Value="0.9" />
-            <!-- Удален DropShadowEffect -->
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="Padding" Value="15,10"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="8">
+                            <ContentPresenter x:Name="contentPresenter" 
+                                      HorizontalAlignment="Center" 
+                                      VerticalAlignment="Center"
+                                      Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#354052" TargetName="border"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#2d3646" TargetName="border"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
-        <!-- Стиль для заголовков -->
+        <Style x:Key="SoftTextBlockStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Opacity" Value="0.9"/>
+        </Style>
+
         <Style x:Key="SoftHeaderTextBlockStyle" TargetType="TextBlock">
             <Setter Property="Foreground">
                 <Setter.Value>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#5fc4b8" Offset="0" />
-                        <GradientStop Color="#3d8f7a" Offset="1" />
+                        <GradientStop Color="{StaticResource PrimaryColor}" Offset="0"/>
+                        <GradientStop Color="{StaticResource DarkPrimaryColor}" Offset="1"/>
                     </LinearGradientBrush>
                 </Setter.Value>
             </Setter>
-            <Setter Property="FontSize" Value="28" />
-            <Setter Property="FontFamily" Value="Segoe UI" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="Opacity" Value="0.9" />
-            <!-- Удален DropShadowEffect -->
+            <Setter Property="FontSize" Value="28"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Opacity" Value="0.9"/>
         </Style>
 
-        <!-- Анимация для текстовых блоков при наведении -->
-        <Storyboard x:Key="TextHoverAnimation">
-            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2" />
-            <ColorAnimation Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="#FFFFFF" Duration="0:0:0.2" />
-        </Storyboard>
+        <Style x:Key="ErrorTextBlockStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource ErrorBrush}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="10,2,0,5"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Visibility" Value="Collapsed"/>
+        </Style>
 
-        <!-- Триггер для анимации при наведении -->
-        <Style x:Key="InteractiveTextBlockStyle" TargetType="TextBlock" BasedOn="{StaticResource SoftTextBlockStyle}">
-            <Setter Property="Opacity" Value="0.8" />
-            <Setter Property="Foreground" Value="#E0E0E0" />
+        <Style x:Key="EyeToggleButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                        Background="Transparent" 
+                        CornerRadius="15">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
             <Style.Triggers>
-                <EventTrigger RoutedEvent="MouseEnter">
-                    <BeginStoryboard Storyboard="{StaticResource TextHoverAnimation}" />
-                </EventTrigger>
-                <EventTrigger RoutedEvent="MouseLeave">
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0.8" Duration="0:0:0.2" />
-                            <ColorAnimation Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="#E0E0E0" Duration="0:0:0.2" />
-                        </Storyboard>
-                    </BeginStoryboard>
-                </EventTrigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#354052"/>
+                </Trigger>
             </Style.Triggers>
+        </Style>
+
+        <Style x:Key="VerificationCodeTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource ModernTextBoxStyle}">
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="CharacterCasing" Value="Upper"/>
+            <Setter Property="MaxLength" Value="6"/>
+            <Setter Property="Width" Value="250"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+
+        <Style x:Key="VerificationTextBlockStyle" TargetType="TextBlock" BasedOn="{StaticResource SoftTextBlockStyle}">
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="20,0,20,20"/>
+            <Setter Property="FontSize" Value="18"/>
         </Style>
     </Window.Resources>
 
-    <Grid>
-        <!-- Разделение на две колонки -->
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-        </Grid.ColumnDefinitions>
+    <Grid Background="{StaticResource BackgroundBrush}">
+        <Border x:Name="MainBorder" CornerRadius="16"
+                BorderThickness="1" BorderBrush="#3a4a6b" Margin="8">
+        </Border>
+        <Grid x:Name="MainGrid">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.5*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
 
-        <!-- Левая часть с градиентным фоном и заголовком -->
-        <Border Grid.Column="0" Background="#1b2339">
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <!-- Заголовок или логотип -->
-                <TextBlock Text="TechFlow" 
-                           FontSize="48" 
-                           FontWeight="Bold" 
-                           Foreground="White" 
-                           HorizontalAlignment="Center" 
-                           Margin="0,0,0,20"
-                           Style="{StaticResource SoftHeaderTextBlockStyle}"/>
-                <TextBlock Text="Добро пожаловать!" 
-                           FontSize="24" 
-                           Foreground="#E0E0E0" 
-                           HorizontalAlignment="Center" 
-                           Style="{StaticResource SoftTextBlockStyle}"/>
-            </StackPanel>
+            <Grid Grid.Column="0" Grid.ColumnSpan="2" Style="{StaticResource WindowHeaderStyle}"  Panel.ZIndex="1"
+                  MouseLeftButtonDown="WindowHeader_MouseLeftButtonDown">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" 
+                           Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
+                           Style="{StaticResource WindowTitleStyle}"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Style="{StaticResource WindowButtonStyle}" Click="MinimizeButton_Click">
+                        <materialDesign:PackIcon Kind="WindowMinimize" Width="16" Height="16"/>
+                    </Button>
+                    <Button Style="{StaticResource WindowButtonStyle}" Click="MaximizeButton_Click">
+                        <materialDesign:PackIcon Kind="WindowMaximize" Width="16" Height="16"/>
+                    </Button>
+                    <Button Style="{StaticResource WindowButtonStyle}" Click="CloseButton_Click">
+                        <materialDesign:PackIcon Kind="WindowClose" Width="16" Height="16"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <Grid Grid.Column="0" Background="{StaticResource BackgroundBrush}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Canvas>
+                    <Ellipse Width="150" Height="150" Fill="{StaticResource PrimaryBrush}" Opacity="0.05"
+                             Canvas.Left="-75" Canvas.Top="100">
+                        <Ellipse.RenderTransform>
+                            <TranslateTransform X="0" Y="0"/>
+                        </Ellipse.RenderTransform>
+                        <Ellipse.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                        <DoubleAnimation Storyboard.TargetProperty="(Ellipse.RenderTransform).(TranslateTransform.Y)" 
+                                                         From="0" To="30" Duration="0:0:4"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Ellipse.Triggers>
+                    </Ellipse>
+
+                    <Ellipse Width="120" Height="120" Fill="{StaticResource AccentBrush}" Opacity="0.05"
+                             Canvas.Left="450" Canvas.Top="100">
+                        <Ellipse.RenderTransform>
+                            <TranslateTransform X="0" Y="0"/>
+                        </Ellipse.RenderTransform>
+                        <Ellipse.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                        <DoubleAnimation Storyboard.TargetProperty="(Ellipse.RenderTransform).(TranslateTransform.Y)" 
+                                                         From="0" To="-20" Duration="0:0:3"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Ellipse.Triggers>
+                    </Ellipse>
+
+                    <Path Data="M0,0 L50,0 L25,50 Z" Fill="{StaticResource PrimaryBrush}" Opacity="0.05"
+                          Canvas.Left="200" Canvas.Top="600"
+                          Stretch="Uniform" Width="100" Height="100">
+                        <Path.RenderTransform>
+                            <RotateTransform Angle="0" CenterX="50" CenterY="50"/>
+                        </Path.RenderTransform>
+                        <Path.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever">
+                                        <DoubleAnimation Storyboard.TargetProperty="(Path.RenderTransform).(RotateTransform.Angle)" 
+                                                         From="0" To="360" Duration="0:0:12"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Path.Triggers>
+                    </Path>
+                </Canvas>
+
+                <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Width="400">
+                    <TextBlock Text="TechFlow" 
+                               Style="{StaticResource SoftHeaderTextBlockStyle}"
+                               FontSize="42"
+                               HorizontalAlignment="Center" 
+                               Margin="0,0,0,20">
+                        <TextBlock.Effect>
+                            <DropShadowEffect BlurRadius="10" Opacity="0.2" ShadowDepth="2" Color="{StaticResource PrimaryColor}"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
+
+                    <TextBlock Text="Добро пожаловать!" 
+                               Style="{StaticResource SoftTextBlockStyle}"
+                               FontSize="24"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,30"/>
+
+                    <TextBlock Text="Войдите в систему, чтобы получить доступ к своим проектам и задачам или оформить заказ" 
+                               Style="{StaticResource SoftTextBlockStyle}"
+                               FontSize="16"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,40"
+                               Opacity="0.8"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
+                    <TextBlock Text="© 2025 TechFlow" Foreground="{StaticResource TextBrush}" Opacity="0.6"/>
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Column="1" Background="{StaticResource SecondaryBackgroundBrush}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="30" MinHeight="550">
+                        <TextBlock Text="Вход в систему" 
+                                   Style="{StaticResource SoftHeaderTextBlockStyle}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,30"/>
+
+                        <StackPanel x:Name="LoginForm" Width="320" Margin="0,20,0,0">
+                            <TextBlock Text="Логин или Email" 
+                                       Style="{StaticResource SoftTextBlockStyle}"
+                                       FontSize="18"/>
+                            <TextBox x:Name="EmailorLoginField" 
+                                     Style="{StaticResource ModernTextBoxStyle}" 
+                                     Margin="0,5,0,5"
+                                     Tag="Введите логин или email"
+                                     Height="40"/>
+                            <TextBlock x:Name="LoginError" Style="{StaticResource ErrorTextBlockStyle}"/>
+
+                            <TextBlock Text="Пароль" 
+                                       Style="{StaticResource SoftTextBlockStyle}"
+                                       FontSize="18"
+                                       Margin="0,15,0,5"/>
+
+                            <Grid>
+                                <PasswordBox x:Name="PasswordField" 
+                                             Style="{StaticResource ModernPasswordBoxStyle}" 
+                                             Height="40" 
+                                             Margin="0,5,0,5"
+                                             Tag="Введите пароль"
+                                             PasswordChanged="PasswordField_PasswordChanged"/>
+
+                                <TextBox x:Name="VisiblePasswordField" 
+                                         Style="{StaticResource VisiblePasswordTextBoxStyle}" 
+                                         Height="40" 
+                                         Margin="0,5,0,5"
+                                         Tag="Введите пароль"
+                                         Visibility="Collapsed"/>
+
+                                <Button x:Name="TogglePasswordVisibilityButton" 
+                                        Style="{StaticResource EyeToggleButtonStyle}"
+                                        HorizontalAlignment="Right" 
+                                        VerticalAlignment="Center"
+                                        Margin="0,5,10,5"
+                                        Click="TogglePasswordVisibilityButton_Click">
+                                    <materialDesign:PackIcon Kind="Eye" Width="20" Height="20"/>
+                                </Button>
+                            </Grid>
+                            <TextBlock x:Name="PasswordError" Style="{StaticResource ErrorTextBlockStyle}"/>
+
+                            <Grid Margin="0,10,0,20">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Button x:Name="ForgotPasswordButton"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="Забыли пароль?"
+                                        Padding="5"
+                                        FontSize="14"
+                                        Click="ForgotPasswordButton_Click"
+                                        HorizontalAlignment="Right"
+                                        Grid.Column="2"/>
+                            </Grid>
+
+                            <Button Content="Войти" 
+                                    Height="50" 
+                                    Style="{StaticResource MenuButtonStyle}" 
+                                    Click="LoginButtonMain_Click"
+                                    HorizontalAlignment="Stretch"
+                                    Margin="0,0,0,20"/>
+
+                            <Grid Margin="0,0,0,15" HorizontalAlignment="Stretch">
+                                <Line X1="0" X2="1" Stretch="Fill" Stroke="{StaticResource TextBrush}" StrokeThickness="1" Opacity="0.2"/>
+                                <TextBlock Text="Нет аккаунта?" 
+                                           Foreground="{StaticResource TextBrush}" 
+                                           Background="{StaticResource SecondaryBackgroundBrush}" 
+                                           Padding="10,0"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <Button Content="Создать аккаунт" 
+                                    Height="50" 
+                                    Style="{StaticResource SecondaryButtonStyle}" 
+                                    Click="RegisterButton_Click"
+                                    HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <Border x:Name="RecoveryLayout" Background="{StaticResource BackgroundBrush}" Visibility="Collapsed">
+            <Grid>
+                <Ellipse Width="300" Height="300" 
+                         Stroke="{StaticResource PrimaryBrush}" 
+                         StrokeThickness="2"
+                         StrokeDashArray="4 6"
+                         Opacity="0.4" 
+                         HorizontalAlignment="Left" 
+                         VerticalAlignment="Top" 
+                         Margin="-150,-150,0,0">
+                    <Ellipse.RenderTransform>
+                        <RotateTransform x:Name="RecoveryRotation1" Angle="0" CenterX="150" CenterY="150"/>
+                    </Ellipse.RenderTransform>
+                    <Ellipse.Triggers>
+                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation 
+                                        Storyboard.TargetName="RecoveryRotation1"
+                                        Storyboard.TargetProperty="Angle"
+                                        From="0" To="360" 
+                                        Duration="0:0:20" 
+                                        RepeatBehavior="Forever"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Ellipse.Triggers>
+                </Ellipse>
+
+                <Ellipse Width="400" Height="400" 
+                         Stroke="{StaticResource AccentBrush}" 
+                         StrokeThickness="1" 
+                         StrokeDashArray="6 8"
+                         Opacity="0.2" 
+                         HorizontalAlignment="Right" 
+                         VerticalAlignment="Bottom" 
+                         Margin="0,0,-200,-200">
+                    <Ellipse.RenderTransform>
+                        <RotateTransform x:Name="RecoveryRotation2" Angle="0" CenterX="200" CenterY="200"/>
+                    </Ellipse.RenderTransform>
+                    <Ellipse.Triggers>
+                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation 
+                                        Storyboard.TargetName="RecoveryRotation2"
+                                        Storyboard.TargetProperty="Angle"
+                                        From="0" To="-360" 
+                                        Duration="0:0:25" 
+                                        RepeatBehavior="Forever"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Ellipse.Triggers>
+                </Ellipse>
+
+                <Rectangle Opacity="0.03">
+                    <Rectangle.Fill>
+                        <DrawingBrush Viewport="0,0,50,50" ViewportUnits="Absolute" TileMode="Tile">
+                            <DrawingBrush.Drawing>
+                                <GeometryDrawing>
+                                    <GeometryDrawing.Geometry>
+                                        <GeometryGroup>
+                                            <LineGeometry StartPoint="0,0" EndPoint="0,50"/>
+                                            <LineGeometry StartPoint="0,0" EndPoint="50,0"/>
+                                        </GeometryGroup>
+                                    </GeometryDrawing.Geometry>
+                                    <GeometryDrawing.Pen>
+                                        <Pen Brush="{StaticResource PrimaryBrush}" Thickness="1"/>
+                                    </GeometryDrawing.Pen>
+                                </GeometryDrawing>
+                            </DrawingBrush.Drawing>
+                        </DrawingBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <Border Background="{StaticResource SecondaryBackgroundBrush}" 
+                            BorderBrush="{StaticResource PrimaryBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="20"
+                            Width="400"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Margin="20">
+                        <StackPanel x:Name="RecoveryPanel" Opacity="0">
+                            <TextBlock Text="TechFlow" 
+                                       Style="{StaticResource SoftHeaderTextBlockStyle}"
+                                       FontSize="36"
+                                       HorizontalAlignment="Center" 
+                                       Margin="0,0,0,10"/>
+
+                            <TextBlock Text="Восстановление пароля" 
+                                       Style="{StaticResource SoftHeaderTextBlockStyle}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,20"/>
+
+                            <TextBlock Text="Для восстановления пароля введите email, связанный с вашим аккаунтом. Мы отправим на него код подтверждения." 
+                                       Style="{StaticResource VerificationTextBlockStyle}"/>
+
+                            <TextBox x:Name="RecoveryEmailField" 
+                                     Style="{StaticResource ModernTextBoxStyle}" 
+                                     Tag="Введите email"
+                                     Height="40"
+                                     Margin="0,0,0,10"/>
+
+                            <TextBlock x:Name="RecoveryError" 
+                                       Style="{StaticResource ErrorTextBlockStyle}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,10"/>
+
+                            <Button Content="Отправить код" 
+                                    x:Name="SendRecoveryCodeButton"
+                                    Height="45" 
+                                    MinWidth="150" 
+                                    Style="{StaticResource MenuButtonStyle}" 
+                                    Click="SendRecoveryCode_Click"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,15,0,0"/>
+
+                            <Button Content="Назад" 
+                                    Height="45"
+                                    MinWidth="150" 
+                                    Style="{StaticResource SecondaryButtonStyle}" 
+                                    Click="BackFromRecovery_Click"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,20,0,0"
+                                    FontSize="14"/>
+                        </StackPanel>
+                    </Border>
+                </ScrollViewer>
+            </Grid>
         </Border>
 
-        <!-- Правая часть с формой входа -->
-        <Border Grid.Column="1" Background="#252c43" Width="400">
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
-                <!-- Заголовок формы -->
-                <TextBlock Text="Вход в аккаунт" 
-                           HorizontalAlignment="Center" 
-                           FontSize="32" 
-                           FontWeight="Bold" 
-                           Style="{StaticResource SoftHeaderTextBlockStyle}" 
-                           Margin="0,0,0,30"/>
+        <Border x:Name="VerificationLayout" Background="{StaticResource BackgroundBrush}" Visibility="Collapsed">
+            <Grid>
+                <Ellipse Width="300" Height="300" 
+                         Stroke="{StaticResource PrimaryBrush}" 
+                         StrokeThickness="2"
+                         StrokeDashArray="4 6"
+                         Opacity="0.4" 
+                         HorizontalAlignment="Left" 
+                         VerticalAlignment="Top" 
+                         Margin="-150,-150,0,0">
+                    <Ellipse.RenderTransform>
+                        <RotateTransform x:Name="VerificationRotation1" Angle="0" CenterX="150" CenterY="150"/>
+                    </Ellipse.RenderTransform>
+                    <Ellipse.Triggers>
+                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation 
+                                        Storyboard.TargetName="VerificationRotation1"
+                                        Storyboard.TargetProperty="Angle"
+                                        From="0" To="360" 
+                                        Duration="0:0:20" 
+                                        RepeatBehavior="Forever"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Ellipse.Triggers>
+                </Ellipse>
 
-                <!-- Форма входа -->
-                <StackPanel Width="300">
-                    <!-- Логин или Email -->
-                    <TextBlock Text="Логин или Email" 
-                               HorizontalAlignment="Left" 
-                               FontSize="18" 
-                               Style="{StaticResource InteractiveTextBlockStyle}" />
+                <Ellipse Width="400" Height="400" 
+                         Stroke="{StaticResource AccentBrush}" 
+                         StrokeThickness="1" 
+                         StrokeDashArray="6 8"
+                         Opacity="0.2" 
+                         HorizontalAlignment="Right" 
+                         VerticalAlignment="Bottom" 
+                         Margin="0,0,-200,-200">
+                    <Ellipse.RenderTransform>
+                        <RotateTransform x:Name="VerificationRotation2" Angle="0" CenterX="200" CenterY="200"/>
+                    </Ellipse.RenderTransform>
+                    <Ellipse.Triggers>
+                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation 
+                                        Storyboard.TargetName="VerificationRotation2"
+                                        Storyboard.TargetProperty="Angle"
+                                        From="0" To="-360" 
+                                        Duration="0:0:25" 
+                                        RepeatBehavior="Forever"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Ellipse.Triggers>
+                </Ellipse>
 
-                    <TextBox x:Name="EmailorLoginField" Text="Nik2"
-                             Style="{StaticResource ModernTextBoxStyle}" 
-                             Margin="0,0,0,20" 
-                             Height="40" />
+                <Rectangle Opacity="0.03">
+                    <Rectangle.Fill>
+                        <DrawingBrush Viewport="0,0,50,50" ViewportUnits="Absolute" TileMode="Tile">
+                            <DrawingBrush.Drawing>
+                                <GeometryDrawing>
+                                    <GeometryDrawing.Geometry>
+                                        <GeometryGroup>
+                                            <LineGeometry StartPoint="0,0" EndPoint="0,50"/>
+                                            <LineGeometry StartPoint="0,0" EndPoint="50,0"/>
+                                        </GeometryGroup>
+                                    </GeometryDrawing.Geometry>
+                                    <GeometryDrawing.Pen>
+                                        <Pen Brush="{StaticResource PrimaryBrush}" Thickness="1"/>
+                                    </GeometryDrawing.Pen>
+                                </GeometryDrawing>
+                            </DrawingBrush.Drawing>
+                        </DrawingBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
 
-                    <!-- Пароль -->
-                    <TextBlock Text="Пароль"
-                               HorizontalAlignment="Left" 
-                               FontSize="18" 
-                               Style="{StaticResource InteractiveTextBlockStyle}" />
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <Border Background="{StaticResource SecondaryBackgroundBrush}" 
+                            BorderBrush="{StaticResource PrimaryBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="20"
+                            Width="400"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Margin="20">
+                        <StackPanel x:Name="VerificationPanel" Opacity="0">
+                            <TextBlock Text="TechFlow" 
+                                       Style="{StaticResource SoftHeaderTextBlockStyle}"
+                                       FontSize="36"
+                                       HorizontalAlignment="Center" 
+                                       Margin="0,0,0,10"/>
 
-                    <!-- Контейнер для PasswordBox и кнопки глаза -->
-                    <Grid>
-                        <PasswordBox x:Name="PasswordField"
-                                     Style="{StaticResource ModernPasswordBoxStyle}" 
-                                     Height="40" 
-                                     Margin="0,0,0,30" 
-                                     PasswordChanged="PasswordField_PasswordChanged" />
+                            <TextBlock Text="Подтверждение сброса пароля" 
+                                       Style="{StaticResource SoftHeaderTextBlockStyle}"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"
+                                       Margin="0,0,0,20"
+                                       TextWrapping="Wrap"/>
 
-                        <!-- TextBox для отображения пароля -->
-                        <TextBox x:Name="VisiblePasswordField"
-                                 Style="{StaticResource VisiblePasswordField}" 
-                                 Height="40" 
-                                 Margin="0,0,0,30" 
-                                 Visibility="Collapsed" />
+                            <TextBlock Text="Мы отправили 6-значный код подтверждения на указанный email. Введите его ниже для продолжения процедуры сброса пароля." 
+                                       Style="{StaticResource VerificationTextBlockStyle}"/>
 
-                        <!-- Кнопка глаза -->
-                        <Button x:Name="TogglePasswordVisibilityButton" 
-                                Content="{materialDesign:PackIcon Kind=Eye}" 
-                                Style="{StaticResource MenuButtonStyle}" 
-                                Width="30" 
-                                Height="30" 
-                                HorizontalAlignment="Right" 
-                                VerticalAlignment="Top" 
-                                Margin="0,0,5,0" 
-                                Click="TogglePasswordVisibilityButton_Click" />
-                    </Grid>
+                            <TextBox x:Name="VerificationCodeField" 
+                                     Style="{StaticResource VerificationCodeTextBoxStyle}" 
+                                     Tag="Код подтверждения"
+                                     Width="260"
+                                     PreviewTextInput="VerificationCodeField_PreviewTextInput"
+                                     TextChanged="VerificationCodeField_TextChanged"/>
 
-                    <!-- Кнопки входа и регистрации -->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Button Content="Вход" 
-                            Height="40" 
-                            Width="120" 
-                            Style="{StaticResource MenuButtonStyle}" 
-                            Click="LoginButtonMain_Click"/>
-                        <Button Content="Регистрация" 
-                            Height="40" 
-                            Width="120" 
-                            Margin="20,0,0,0" 
-                            Style="{StaticResource MenuButtonStyle}" 
-                            Click="RegisterButton_Click"/>
-                    </StackPanel>
-                </StackPanel>
-            </StackPanel>
+                            <TextBlock x:Name="VerificationError" 
+                                       Style="{StaticResource ErrorTextBlockStyle}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,10"/>
+
+                            <Button Content="Подтвердить" 
+                                    Height="45" 
+                                    MinWidth="150" 
+                                    Style="{StaticResource MenuButtonStyle}" 
+                                    Click="VerifyButton_Click"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,15,0,0"/>
+
+                            <Button Content="Отправить код повторно" 
+                                    x:Name="ResendButton"
+                                    Height="45" 
+                                    MinWidth="180" 
+                                    Style="{StaticResource SecondaryButtonStyle}" 
+                                    Click="ResendButton_Click"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,20,0,0"
+                                    FontSize="14"/>
+
+                            <Button Content="Назад" 
+                                    Height="45"
+                                    MinWidth="150" 
+                                    Style="{StaticResource SecondaryButtonStyle}" 
+                                    Click="BackButton_Click"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,20,0,0"
+                                    FontSize="14"/>
+                        </StackPanel>
+                    </Border>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <Border x:Name="PasswordResetLayout" Background="{StaticResource BackgroundBrush}" Visibility="Collapsed">
+            <Grid>
+                <Ellipse Width="300" Height="300" 
+                         Stroke="{StaticResource PrimaryBrush}" 
+                         StrokeThickness="2"
+                         StrokeDashArray="4 6"
+                         Opacity="0.4" 
+                         HorizontalAlignment="Left" 
+                         VerticalAlignment="Top" 
+                         Margin="-150,-150,0,0">
+                    <Ellipse.RenderTransform>
+                        <RotateTransform x:Name="ResetRotation1" Angle="0" CenterX="150" CenterY="150"/>
+                    </Ellipse.RenderTransform>
+                    <Ellipse.Triggers>
+                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation 
+                                        Storyboard.TargetName="ResetRotation1"
+                                        Storyboard.TargetProperty="Angle"
+                                        From="0" To="360" 
+                                        Duration="0:0:20" 
+                                        RepeatBehavior="Forever"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Ellipse.Triggers>
+                </Ellipse>
+
+                <Ellipse Width="400" Height="400" 
+                         Stroke="{StaticResource AccentBrush}" 
+                         StrokeThickness="1" 
+                         StrokeDashArray="6 8"
+                         Opacity="0.2" 
+                         HorizontalAlignment="Right" 
+                         VerticalAlignment="Bottom" 
+                         Margin="0,0,-200,-200">
+                    <Ellipse.RenderTransform>
+                        <RotateTransform x:Name="ResetRotation2" Angle="0" CenterX="200" CenterY="200"/>
+                    </Ellipse.RenderTransform>
+                    <Ellipse.Triggers>
+                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation 
+                                        Storyboard.TargetName="ResetRotation2"
+                                        Storyboard.TargetProperty="Angle"
+                                        From="0" To="-360" 
+                                        Duration="0:0:25" 
+                                        RepeatBehavior="Forever"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Ellipse.Triggers>
+                </Ellipse>
+
+                <Rectangle Opacity="0.03">
+                    <Rectangle.Fill>
+                        <DrawingBrush Viewport="0,0,50,50" ViewportUnits="Absolute" TileMode="Tile">
+                            <DrawingBrush.Drawing>
+                                <GeometryDrawing>
+                                    <GeometryDrawing.Geometry>
+                                        <GeometryGroup>
+                                            <LineGeometry StartPoint="0,0" EndPoint="0,50"/>
+                                            <LineGeometry StartPoint="0,0" EndPoint="50,0"/>
+                                        </GeometryGroup>
+                                    </GeometryDrawing.Geometry>
+                                    <GeometryDrawing.Pen>
+                                        <Pen Brush="{StaticResource PrimaryBrush}" Thickness="1"/>
+                                    </GeometryDrawing.Pen>
+                                </GeometryDrawing>
+                            </DrawingBrush.Drawing>
+                        </DrawingBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <Border Background="{StaticResource SecondaryBackgroundBrush}" 
+                            BorderBrush="{StaticResource PrimaryBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="20"
+                            Width="400"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Margin="20">
+                        <StackPanel x:Name="PasswordResetPanel" Opacity="0">
+                            <TextBlock Text="TechFlow" 
+                                       Style="{StaticResource SoftHeaderTextBlockStyle}"
+                                       FontSize="36"
+                                       HorizontalAlignment="Center" 
+                                       Margin="0,0,0,10"/>
+
+                            <TextBlock Text="Создание нового пароля" 
+                                       Style="{StaticResource SoftHeaderTextBlockStyle}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,20"/>
+
+                            <TextBlock Text="Придумайте новый надежный пароль для вашего аккаунта и подтвердите его." 
+                                       Style="{StaticResource VerificationTextBlockStyle}"/>
+
+                            <PasswordBox x:Name="NewPasswordField" 
+                                 Style="{StaticResource ModernPasswordBoxStyle}" 
+                                 Tag="Новый пароль"
+                                 Height="40"
+                                 Margin="0,0,0,5"/>
+
+                                                <PasswordBox x:Name="ConfirmPasswordField" 
+                                 Style="{StaticResource ModernPasswordBoxStyle}" 
+                                 Tag="Подтвердите пароль"
+                                 Height="40"
+                                 Margin="0,0,0,5"/>
+
+                            <TextBlock x:Name="PasswordResetError" 
+                                       Style="{StaticResource ErrorTextBlockStyle}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,10"/>
+
+                            <Button Content="Сбросить пароль" 
+                                    Height="45" 
+                                    MinWidth="150" 
+                                    Style="{StaticResource MenuButtonStyle}" 
+                                    Click="ResetPasswordButton_Click"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,15,0,0"/>
+
+                            <Button Content="Назад" 
+                                    Height="45"
+                                    MinWidth="150" 
+                                    Style="{StaticResource SecondaryButtonStyle}" 
+                                    Click="BackFromPasswordReset_Click"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,20,0,0"
+                                    FontSize="14"/>
+                        </StackPanel>
+                    </Border>
+                </ScrollViewer>
+            </Grid>
         </Border>
     </Grid>
 </Window>

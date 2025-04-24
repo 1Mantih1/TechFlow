@@ -1,51 +1,99 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using TechFlow.Models;
 
 namespace TechFlow.Pages
 {
-    /// <summary>
-    /// Логика взаимодействия для AdminPanelPage.xaml
-    /// </summary>
     public partial class AdminPanelPage : Page
     {
+        private List<User> employeesToModerate;
+        UserFromDb userFromDb = new UserFromDb();
+        TimesheetFromDb timesheetFromDb = new TimesheetFromDb();
+
         public AdminPanelPage()
         {
             InitializeComponent();
+            LoadModerationData();
+            LoadUnmoderatedProjects();
         }
 
-        private void AdminTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void LoadModerationData()
         {
-            // Получаем выбранную вкладку
-            var selectedTab = AdminTabs.SelectedItem as TabItem;
+            employeesToModerate = userFromDb.LoadEmployeesWithDefaultRole();
+            EmployeesList.ItemsSource = employeesToModerate;
+        }
 
-            if (selectedTab != null)
+        private void LoadUnmoderatedProjects()
+        {
+            var projectFromDb = new ProjectFromDb();
+            UnmoderatedProjectsList.ItemsSource = projectFromDb.LoadModeratingProjects();
+        }
+
+        private void DetailsButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is int projectId)
             {
-                // Проверка, какой TabItem был выбран
-                if (selectedTab.Header.ToString() == "Проекты")
+                ProjectDetailsPage detailsPage = new ProjectDetailsPage(projectId);
+                NavigationService?.Navigate(detailsPage);
+            }
+        }
+
+        private void ApproveButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is int projectId)
+            {
+                var projectFromDb = new ProjectFromDb();
+                if (projectFromDb.ApproveProject(projectId))
                 {
-                    // Логика для вкладки "Проекты"
-                    Console.WriteLine("Вы выбрали вкладку Проекты");
-                }
-                else if (selectedTab.Header.ToString() == "Модерация")
-                {
-                    // Логика для вкладки "Модерация"
-                    Console.WriteLine("Вы выбрали вкладку Модерация");
+                    MessageBox.Show("Проект утвержден");
+                    LoadUnmoderatedProjects();
                 }
             }
         }
 
+        private void RejectButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is int projectId)
+            {
+                var projectFromDb = new ProjectFromDb();
+                if (projectFromDb.RejectProject(projectId))
+                {
+                    MessageBox.Show("Проект отклонен");
+                    LoadUnmoderatedProjects();
+                }
+            }
+        }
+
+        private void AcceptButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (((Button)sender).DataContext is User user)
+            {
+                // Устанавливаем роль "Разработчик" по умолчанию
+                if (userFromDb.UpdateEmployeeRole(user.UserId, "Разработчик"))
+                {
+                    // Создаем запись в табеле
+                    timesheetFromDb.CreateInitialTimesheet(user.UserId);
+
+                    MessageBox.Show("Сотрудник принят и добавлен в табель");
+                    LoadModerationData();
+                }
+            }
+        }
+
+        private void RejectUserButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (((Button)sender).DataContext is User user)
+            {
+                if (userFromDb.DeleteUser(user.UserId))
+                {
+                    MessageBox.Show("Сотрудник отклонен и удален из системы");
+                    LoadModerationData();
+                }
+            }
+        }
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
         {

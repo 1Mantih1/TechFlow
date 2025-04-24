@@ -3,6 +3,8 @@ using System.Windows;
 using TechFlow.Classes;
 using TechFlow.Windows;
 using Npgsql;
+using System.Collections.Generic;
+using System.IO;
 
 namespace TechFlow.Models
 {
@@ -21,13 +23,21 @@ namespace TechFlow.Models
 
                     if (!loginOrEmail.Contains("@"))
                     {
-                        sqlExp = "SELECT * FROM employee WHERE login=@login;";
+                        sqlExp = @"
+                    SELECT e.*, r.employee_role_name 
+                    FROM employee e
+                    JOIN employee_role r ON e.role_id = r.employee_role_id
+                    WHERE e.login = @login";
                         cmd = new NpgsqlCommand(sqlExp, connect);
                         cmd.Parameters.AddWithValue("login", loginOrEmail);
                     }
                     else
                     {
-                        sqlExp = "SELECT * FROM employee WHERE email=@email;";
+                        sqlExp = @"
+                    SELECT e.*, r.employee_role_name 
+                    FROM employee e
+                    JOIN employee_role r ON e.role_id = r.employee_role_id
+                    WHERE e.email = @email";
                         cmd = new NpgsqlCommand(sqlExp, connect);
                         cmd.Parameters.AddWithValue("email", loginOrEmail);
                     }
@@ -38,9 +48,9 @@ namespace TechFlow.Models
                         {
                             reader.Read();
 
-                            if (password != "")
+                            if (!string.IsNullOrEmpty(password))
                             {
-                                if (Verification.VerifySHA512Hash(password, (string)reader["password"]))
+                                if (Verification.VerifySHA512Hash(password, reader["password"].ToString()))
                                 {
                                     DateTime dateOfBirth = DateTime.MinValue;
                                     if (reader["date_of_birth"] != DBNull.Value)
@@ -48,7 +58,6 @@ namespace TechFlow.Models
                                         dateOfBirth = Convert.ToDateTime(reader["date_of_birth"]);
                                     }
 
-                                    // Обработка NULL для остальных полей
                                     string phone = reader["phone"] != DBNull.Value ? reader["phone"].ToString() : string.Empty;
                                     string address = reader["address"] != DBNull.Value ? reader["address"].ToString() : string.Empty;
                                     string imagePath = reader["image_path"] != DBNull.Value ? reader["image_path"].ToString() : string.Empty;
@@ -59,13 +68,15 @@ namespace TechFlow.Models
                                         reader["last_name"].ToString(),
                                         dateOfBirth,
                                         reader["login"].ToString(),
-                                        (string)reader["password"],
+                                        reader["password"].ToString(),
                                         address,
                                         phone,
                                         (int)reader["role_id"],
                                         reader["email"].ToString(),
                                         imagePath
                                     );
+
+                                    user.RoleName = reader["employee_role_name"].ToString();
                                 }
                                 else
                                 {
@@ -77,7 +88,6 @@ namespace TechFlow.Models
                                 MessageBox.Show("Пароль не может быть пустым");
                             }
                         }
-                        // Убрано сообщение "Пользователь с такими данными не найден"
                     }
                 }
             }
@@ -89,8 +99,10 @@ namespace TechFlow.Models
             {
                 MessageBox.Show($"Неожиданная ошибка: {ex.Message}");
             }
+
             return user;
         }
+
 
         public Client GetClient(string loginOrEmail, string password)
         {
@@ -126,7 +138,6 @@ namespace TechFlow.Models
                             {
                                 if (Verification.VerifySHA512Hash(password, (string)reader["password_hash"]))
                                 {
-                                    // Обработка NULL для полей
                                     string phone = reader["phone"] != DBNull.Value ? reader["phone"].ToString() : string.Empty;
 
                                     client = new Client(
@@ -351,22 +362,72 @@ namespace TechFlow.Models
                 {
                     connection.Open();
 
+                    string fileName = Path.GetFileName(imagePath);
+
+                    string relativePath = Path.Combine("..", "..", "avatar", fileName);
+
                     string sqlExp = @"
-                        UPDATE employee
-                        SET image_path = @ImagePath
-                        WHERE employee_id = @employee_id;";
+                UPDATE employee
+                SET image_path = @ImagePath
+                WHERE employee_id = @employee_id;";
 
                     using (NpgsqlCommand command = new NpgsqlCommand(sqlExp, connection))
                     {
                         command.Parameters.AddWithValue("@employee_id", employee_id);
-                        command.Parameters.AddWithValue("@ImagePath", imagePath);
+                        command.Parameters.AddWithValue("@ImagePath", relativePath);
 
                         return command.ExecuteNonQuery() > 0;
                     }
                 }
-                catch (NpgsqlException ex)
+                catch (Exception ex)
                 {
                     MessageBox.Show("Ошибка обновления аватара: " + ex.Message);
+                    return false;
+                }
+            }
+        }
+
+
+        public bool UpdatePassword(string email, string newPassword)
+        {
+            using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
+            {
+                try
+                {
+                    connection.Open();
+                    string hashedPassword = Verification.GetSHA512Hash(newPassword);
+
+                    string checkEmployeeSql = "SELECT COUNT(*) FROM employee WHERE email = @email";
+                    bool isEmployee = false;
+
+                    using (NpgsqlCommand checkCommand = new NpgsqlCommand(checkEmployeeSql, connection))
+                    {
+                        checkCommand.Parameters.AddWithValue("@email", email);
+                        isEmployee = Convert.ToInt32(checkCommand.ExecuteScalar()) > 0;
+                    }
+
+                    string updateSql;
+                    if (isEmployee)
+                    {
+                        updateSql = "UPDATE employee SET password_hash = @password WHERE email = @email";
+                    }
+                    else
+                    {
+                        updateSql = "UPDATE client SET password_hash = @password WHERE email = @email";
+                    }
+
+                    using (NpgsqlCommand updateCommand = new NpgsqlCommand(updateSql, connection))
+                    {
+                        updateCommand.Parameters.AddWithValue("@email", email);
+                        updateCommand.Parameters.AddWithValue("@password", hashedPassword);
+
+                        int rowsAffected = updateCommand.ExecuteNonQuery();
+                        return rowsAffected > 0;
+                    }
+                }
+                catch (NpgsqlException ex)
+                {
+                    MessageBox.Show("Ошибка обновления пароля: " + ex.Message);
                     return false;
                 }
             }
@@ -398,9 +459,6 @@ namespace TechFlow.Models
             }
         }
 
-        /// <summary>
-        /// Устанавливает роль "Не определено" для указанного сотрудника
-        /// </summary>
         public bool SetEmployeeRole(int employeeId)
         {
             try
@@ -443,14 +501,11 @@ namespace TechFlow.Models
                 {
                     connect.Open();
 
-                    // Удаляем связанные записи сначала (если есть внешние ключи)
-                    // Например, если есть таблица customer, связанная с employee
                     string deleteCustomerQuery = "DELETE FROM customer WHERE employee_id = @employeeId";
                     NpgsqlCommand deleteCustomerCmd = new NpgsqlCommand(deleteCustomerQuery, connect);
                     deleteCustomerCmd.Parameters.AddWithValue("@employeeId", employeeId);
                     deleteCustomerCmd.ExecuteNonQuery();
 
-                    // Затем удаляем самого сотрудника
                     string deleteEmployeeQuery = "DELETE FROM employee WHERE employee_id = @employeeId";
                     NpgsqlCommand deleteEmployeeCmd = new NpgsqlCommand(deleteEmployeeQuery, connect);
                     deleteEmployeeCmd.Parameters.AddWithValue("@employeeId", employeeId);
@@ -586,13 +641,110 @@ namespace TechFlow.Models
                     cmd.Parameters.AddWithValue("@userId", userId);
 
                     var roleName = cmd.ExecuteScalar()?.ToString();
-                    return roleName == "Сотрудник"; // true если ожидает модерации
+                    return roleName == "Сотрудник";
                 }
             }
             catch (NpgsqlException ex)
             {
                 MessageBox.Show("Ошибка при проверке статуса: " + ex.Message);
-                return true; // В случае ошибки считаем, что требует модерации
+                return true;
+            }
+        }
+
+        public List<User> LoadEmployeesWithDefaultRole()
+        {
+            List<User> employees = new List<User>();
+
+            using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
+            {
+                try
+                {
+                    connection.Open();
+                    string sqlQuery = @"
+                SELECT e.employee_id, e.first_name, e.last_name, e.date_of_birth, 
+                       e.login, e.phone, e.address, e.role_id, e.email, e.image_path,
+                       er.employee_role_name
+                FROM employee e
+                JOIN employee_role er ON e.role_id = er.employee_role_id
+                WHERE er.employee_role_name = 'Сотрудник'
+                ORDER BY e.last_name, e.first_name;";
+
+                    using (NpgsqlCommand command = new NpgsqlCommand(sqlQuery, connection))
+                    using (NpgsqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            employees.Add(new User
+                            {
+                                UserId = Convert.ToInt32(reader["employee_id"]),
+                                FirstName = reader["first_name"].ToString(),
+                                LastName = reader["last_name"].ToString(),
+                                DateOfBirth = reader["date_of_birth"] != DBNull.Value ? Convert.ToDateTime(reader["date_of_birth"]) : DateTime.MinValue,
+                                Login = reader["login"].ToString(),
+                                Phone = reader["phone"] != DBNull.Value ? reader["phone"].ToString() : null,
+                                Address = reader["address"] != DBNull.Value ? reader["address"].ToString() : null,
+                                RoleId = Convert.ToInt32(reader["role_id"]),
+                                RoleName = reader["employee_role_name"].ToString(),
+                                Email = reader["email"].ToString(),
+                                ImagePath = reader["image_path"] != DBNull.Value ? reader["image_path"].ToString() : "../image/man1.png"
+                            });
+                        }
+                    }
+                }
+                catch (NpgsqlException ex)
+                {
+                    MessageBox.Show($"Ошибка при загрузке сотрудников: {ex.Message}");
+                }
+            }
+
+            return employees;
+        }
+
+        public bool UpdateEmployeeRole(int employeeId, string targetRoleName)
+        {
+            using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
+            {
+                try
+                {
+                    connection.Open();
+
+                    string getRoleIdQuery = @"SELECT employee_role_id 
+                                    FROM employee_role 
+                                    WHERE employee_role_name = @roleName 
+                                    LIMIT 1;";
+
+                    int targetRoleId;
+
+                    using (NpgsqlCommand getRoleCmd = new NpgsqlCommand(getRoleIdQuery, connection))
+                    {
+                        getRoleCmd.Parameters.AddWithValue("@roleName", targetRoleName);
+                        var result = getRoleCmd.ExecuteScalar();
+
+                        if (result == null || result == DBNull.Value)
+                        {
+                            MessageBox.Show($"Роль '{targetRoleName}' не найдена в системе");
+                            return false;
+                        }
+                        targetRoleId = Convert.ToInt32(result);
+                    }
+
+                    string updateQuery = @"UPDATE employee 
+                                 SET role_id = @roleId 
+                                 WHERE employee_id = @employeeId;";
+
+                    using (NpgsqlCommand updateCmd = new NpgsqlCommand(updateQuery, connection))
+                    {
+                        updateCmd.Parameters.AddWithValue("@roleId", targetRoleId);
+                        updateCmd.Parameters.AddWithValue("@employeeId", employeeId);
+
+                        return updateCmd.ExecuteNonQuery() > 0;
+                    }
+                }
+                catch (NpgsqlException ex)
+                {
+                    MessageBox.Show($"Ошибка при изменении роли: {ex.Message}");
+                    return false;
+                }
             }
         }
     }

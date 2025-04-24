@@ -1,62 +1,223 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
+using System.Net;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TechFlow.Classes;
 using TechFlow.Models;
+using TechFlow.Windows;
 
 namespace TechFlow.Pages
 {
-    /// <summary>
-    /// Логика взаимодействия для ProjectStagesPage.xaml
-    /// </summary>
-    public partial class ProjectStagesPage : Page
+    public partial class ProjectStagesPage : Page, INotifyPropertyChanged
     {
-        public ObservableCollection<ProjectStage> ProjectStages { get; set; }
+        public event PropertyChangedEventHandler PropertyChanged;
         public event Action<ProjectStage> OnProjectStageSelected;
+
+        private string searchText;
+        public string SearchText
+        {
+            get => searchText;
+            set
+            {
+                if (searchText != value)
+                {
+                    searchText = value;
+                    OnPropertyChanged(nameof(SearchText));
+                    SearchProjectStages();
+                }
+            }
+        }
+
+        private string projectSearchText;
+        public string ProjectSearchText
+        {
+            get => projectSearchText;
+            set
+            {
+                if (projectSearchText != value)
+                {
+                    projectSearchText = value;
+                    OnPropertyChanged(nameof(ProjectSearchText));
+                }
+            }
+        }
+
+        private string selectedStatus = "Все";
+        public string SelectedStatus
+        {
+            get => selectedStatus;
+            set
+            {
+                if (selectedStatus != value)
+                {
+                    selectedStatus = value;
+                    OnPropertyChanged(nameof(SelectedStatus));
+                }
+            }
+        }
+
+        private string selectedDateFilter = "Любая дата";
+        public string SelectedDateFilter
+        {
+            get => selectedDateFilter;
+            set
+            {
+                if (selectedDateFilter != value)
+                {
+                    selectedDateFilter = value;
+                    OnPropertyChanged(nameof(SelectedDateFilter));
+                }
+            }
+        }
+
+        private bool isUrgentFilter;
+        public bool IsUrgentFilter
+        {
+            get => isUrgentFilter;
+            set
+            {
+                if (isUrgentFilter != value)
+                {
+                    isUrgentFilter = value;
+                    OnPropertyChanged(nameof(IsUrgentFilter));
+                }
+            }
+        }
+
+        private ObservableCollection<ProjectStage> projectStages;
+        public ObservableCollection<ProjectStage> ProjectStages
+        {
+            get => projectStages;
+            set
+            {
+                projectStages = value;
+                OnPropertyChanged(nameof(ProjectStages));
+                OnPropertyChanged(nameof(CurrentProjectCount));
+                OnPropertyChanged(nameof(CurrentActiveProjectsCount));
+            }
+        }
+
+        private readonly ProjectStageFromDb projectStageFromDb = new ProjectStageFromDb();
+
         public ProjectStagesPage()
         {
             InitializeComponent();
-            LoadProjectStages();
             DataContext = this;
+            LoadProjectStages();
         }
 
         private void LoadProjectStages()
         {
-            ProjectStageFromDb projectStageFromDb = new ProjectStageFromDb();
-            ProjectStages = new ObservableCollection<ProjectStage>(projectStageFromDb.LoadProjectStages());
-        }
-
-        public int CurrentProjectCount
-        {
-            get
+            try
             {
-                return ProjectStages.Count;
+                var stagesList = projectStageFromDb.LoadProjectStages();
+                ProjectStages = new ObservableCollection<ProjectStage>(stagesList);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки этапов: {ex.Message}");
             }
         }
-        public int CurrentActiveProjectsCount
+        private void ProjectStages_Loaded(object sender, RoutedEventArgs e)
         {
-            get
+            UserFromDb userFromDb = new UserFromDb();
+            int currentEmployeeId = Windows.Authorization.currentUser.UserId;
+
+            if (userFromDb.IsAdmin(currentEmployeeId))
             {
-                int activeCount = 0;
-                foreach (var stage in ProjectStages)
-                {
-                    if (stage.Status == "Активный")
-                    {
-                        activeCount++;
-                    }
-                }
-                return activeCount;
+                AddStageButton.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                AddStageButton.Visibility = Visibility.Collapsed;
             }
         }
 
+
+        private void SearchProjectStages()
+        {
+            try
+            {
+                var stagesList = projectStageFromDb.FilterProjectStages(
+                    searchText: SearchText,
+                    projectName: ProjectSearchText,
+                    status: SelectedStatus == "Все" ? null : SelectedStatus,
+                    dateFilterOption: SelectedDateFilter,
+                    isUrgent: IsUrgentFilter
+                );
+
+                ProjectStages = new ObservableCollection<ProjectStage>(stagesList);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка поиска: {ex.Message}");
+            }
+        }
+
+
+        public int CurrentProjectCount => ProjectStages.Count;
+
+        public int CurrentActiveProjectsCount =>
+            ProjectStages.Count(s => s.Status == "Активный");
 
         private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            var selectedProjectStage = (ProjectStage)((DataGrid)sender).SelectedItem;
-            OnProjectStageSelected?.Invoke(selectedProjectStage);
+            if (((DataGrid)sender).SelectedItem is ProjectStage selectedStage)
+            {
+                OnProjectStageSelected?.Invoke(selectedStage);
+            }
+        }
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        private void ApplyFilter_Click(object sender, RoutedEventArgs e)
+        {
+            FilterPopup.IsOpen = false;
+            SearchProjectStages();
+        }
+
+        private void ResetFilter_Click(object sender, RoutedEventArgs e)
+        {
+            SearchText = string.Empty;
+            ProjectSearchText = string.Empty;
+            SelectedStatus = "Все";
+            SelectedDateFilter = "Любая дата";
+            IsUrgentFilter = false;
+
+            OnPropertyChanged(nameof(SearchText));
+            OnPropertyChanged(nameof(ProjectSearchText));
+            OnPropertyChanged(nameof(SelectedStatus));
+            OnPropertyChanged(nameof(SelectedDateFilter));
+            OnPropertyChanged(nameof(IsUrgentFilter));
+
+            LoadProjectStages();
+            FilterPopup.IsOpen = false;
+        }
+
+        private void FilterButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (FilterPopup.IsOpen)
+            {
+                FilterPopup.IsOpen = false;
+            }
+            else
+            {
+                FilterPopup.PlacementTarget = sender as Button;
+                FilterPopup.IsOpen = true;
+            }
+        }
+
+        private void AddStageButton_Click(object sender, RoutedEventArgs e)
+        {
+            ProjectAddStagePage projectAddStagePage = new ProjectAddStagePage();
+            NavigationService.Navigate(projectAddStagePage);
         }
     }
 }

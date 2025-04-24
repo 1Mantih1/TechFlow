@@ -13,7 +13,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using TechFlow.Classes;
-using TechFlow.Models;
 using TechFlow.Windows;
 
 namespace TechFlow.Pages
@@ -23,88 +22,35 @@ namespace TechFlow.Pages
     /// </summary>
     public partial class TaskDetailsPage : Page
     {
-        private int TaskId { get; set; }
-        //private Frame ParentFrame { get; set; }
-        public TaskDetailsPage(int taskId)
+        public TaskDetailsPage()
         {
             InitializeComponent();
-            TaskId = taskId;
         }
 
-        private DiscussionFromDb discussionDb = new DiscussionFromDb();
-
-        private void Page_Loaded(object sender, RoutedEventArgs e)
+        private void ButtonChat_Click(object sender, RoutedEventArgs e)
         {
-            var comments = discussionDb.LoadComments(TaskId);
-
-            foreach (var comment in comments)
+            if (DataContext is ProjectTask task)
             {
-                comment.HorizontalAlignment = (comment.EmployeeId == Authorization.currentUser.UserId)
-                    ? HorizontalAlignment.Right
-                    : HorizontalAlignment.Left;
-            }
-
-            CommentList.ItemsSource = comments;
-        }
-
-
-
-
-
-        private void AddCommentButton_Click(object sender, RoutedEventArgs e)
-        {
-            string commentText = CommentTextBox.Text;
-
-            if (string.IsNullOrWhiteSpace(commentText))
-            {
-                CustomMessageBox.Show("Введите текст комментария!");
-                return;
-            }
-
-            int discussionId = TaskId; 
-            int teamEmployeeId = Authorization.currentUser.UserId; 
-
-            discussionDb.AddComment(commentText, discussionId, teamEmployeeId);
-
-            MessageBox.Show("Комментарий добавлен!");
-
-            var comments = discussionDb.LoadComments(discussionId);
-
-            foreach (var comment in comments)
-            {
-                comment.HorizontalAlignment = (comment.EmployeeId == Authorization.currentUser.UserId)
-                    ? HorizontalAlignment.Right
-                    : HorizontalAlignment.Left;
-            }
-
-            CommentList.ItemsSource = null;  
-            CommentList.ItemsSource = comments; 
-
-            CommentTextBox.Text = string.Empty;
-        }
-
-
-        private void BackButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (NavigationService.CanGoBack)
-            {
-                NavigationService.GoBack();
+                TaskChatPage taskChatPage = new TaskChatPage(task.TaskId);
+                NavigationService?.Navigate(taskChatPage);
             }
         }
 
-        private void AddTaskFileButton_Click(object sender, RoutedEventArgs e)
+        private async void ButtonBack_Click(object sender, RoutedEventArgs e)
         {
-
+            var mainWindow = Window.GetWindow(this) as ProjectManagement;
+            if (mainWindow != null)
+            {
+                await mainWindow.GoBack();
+            }
         }
 
-        private void CommentTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        private void ViewAllAttachments_Click(object sender, RoutedEventArgs e)
         {
-            if (CommentTextBox.Text.Length > 200)
+            if (DataContext is ProjectTask task)
             {
-                MessageBox.Show("Комментарий не должен превышать 200 символов.");
-                CommentTextBox.Text = CommentTextBox.Text.Substring(0, 200);
+                NavigationService.Navigate(new AttachmentsPage(task.TaskId));
             }
         }
     }
-
 }

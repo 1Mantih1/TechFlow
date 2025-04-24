@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using TechFlow.Models;
 using TechFlow.Windows;
 
 namespace TechFlow.Pages
@@ -21,16 +22,28 @@ namespace TechFlow.Pages
     /// </summary>
     public partial class ProjectDetailsPage : Page
     {
-        public ProjectDetailsPage()
+        private int projectId;
+        public ProjectDetailsPage(int projectId)
         {
             InitializeComponent();
+            this.projectId = projectId;
+            LoadProjectDetails();
         }
 
-        private void ButtonBack_Click(object sender, RoutedEventArgs e)
+        private void LoadProjectDetails()
         {
-            if (NavigationService.CanGoBack)
+            var projectFromDb = new ProjectFromDb();
+            var project = projectFromDb.GetProjectById(projectId);
+
+            DataContext = project;
+        }
+
+        private async void ButtonBack_Click(object sender, RoutedEventArgs e)
+        {
+            var mainWindow = Window.GetWindow(this) as ProjectManagement;
+            if (mainWindow != null)
             {
-                NavigationService.GoBack();
+                await mainWindow.GoBack();
             }
         }
     }

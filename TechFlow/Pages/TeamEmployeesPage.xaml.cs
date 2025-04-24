@@ -24,11 +24,11 @@ namespace TechFlow.Pages
     public partial class TeamEmployeesPage : Page
     {
         public ObservableCollection<TeamEmployee> TeamEmployees { get; set; }
-        public string TeamName { get; set; }
-        public TeamEmployeesPage(string teamName)
+        public int TeamId { get; set; }
+        public TeamEmployeesPage(int teamId)
         {
             InitializeComponent();
-            TeamName = teamName;
+            TeamId = teamId;
             LoadTeamEmployees();
             DataContext = this;
         }
@@ -36,7 +36,7 @@ namespace TechFlow.Pages
         private void LoadTeamEmployees()
         {
             TeamEmployeeFromDb teamEmployeeFromDb = new TeamEmployeeFromDb();
-            List<TeamEmployee> teamEmployeeList = teamEmployeeFromDb.LoadTeamEmployees();
+            List<TeamEmployee> teamEmployeeList = teamEmployeeFromDb.LoadTeamEmployees(TeamId);
 
             TeamEmployees = new ObservableCollection<TeamEmployee>(teamEmployeeList);
 

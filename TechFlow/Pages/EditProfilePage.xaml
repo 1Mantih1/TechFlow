@@ -10,27 +10,89 @@
       Background="#1b2339">
 
     <Page.Resources>
-        <!-- Стили для TextBox с плейсхолдером -->
+        <Color x:Key="PrimaryColor">#5fc4b8</Color>
+        <Color x:Key="AccentColor">#6d5fc4</Color>
+        <Color x:Key="TextColor">#E0E0E0</Color>
+        <Color x:Key="LightTextColor">#FFFFFF</Color>
+        <Color x:Key="PlaceholderColor">#7f7f7f</Color>
+
+        <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+        <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
+        <SolidColorBrush x:Key="LightTextBrush" Color="{StaticResource LightTextColor}"/>
+        <SolidColorBrush x:Key="PlaceholderBrush" Color="{StaticResource PlaceholderColor}"/>
+
+        <QuadraticEase x:Key="QuadraticEaseOut" EasingMode="EaseOut"/>
+
+        <Storyboard x:Key="AvatarClickAnimation">
+            <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Ellipse.Fill).(GradientBrush.GradientStops)[0].(GradientStop.Color)"
+                                    Storyboard.TargetName="circleFill">
+                <EasingColorKeyFrame KeyTime="0:0:0.0" Value="{StaticResource PrimaryColor}"/>
+                <EasingColorKeyFrame KeyTime="0:0:0.1" Value="{StaticResource AccentColor}" EasingFunction="{StaticResource QuadraticEaseOut}"/>
+                <EasingColorKeyFrame KeyTime="0:0:0.2" Value="{StaticResource PrimaryColor}"/>
+            </ColorAnimationUsingKeyFrames>
+            <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Ellipse.Fill).(GradientBrush.GradientStops)[1].(GradientStop.Color)"
+                                    Storyboard.TargetName="circleFill">
+                <EasingColorKeyFrame KeyTime="0:0:0.0" Value="{StaticResource AccentColor}"/>
+                <EasingColorKeyFrame KeyTime="0:0:0.1" Value="{StaticResource PrimaryColor}" EasingFunction="{StaticResource QuadraticEaseOut}"/>
+                <EasingColorKeyFrame KeyTime="0:0:0.2" Value="{StaticResource AccentColor}"/>
+            </ColorAnimationUsingKeyFrames>
+
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)"
+                                   Storyboard.TargetName="avatarOverlay">
+                <EasingDoubleKeyFrame KeyTime="0:0:0.0" Value="0.4"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.2" Value="0" EasingFunction="{StaticResource QuadraticEaseOut}"/>
+            </DoubleAnimationUsingKeyFrames>
+
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                     Storyboard.TargetName="AvatarImage"
+                     From="0.95" To="1.0" 
+                     Duration="0:0:0.25"
+                     EasingFunction="{StaticResource QuadraticEaseOut}"/>
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                     Storyboard.TargetName="AvatarImage"
+                     From="0.95" To="1.0"
+                     Duration="0:0:0.25"
+                     EasingFunction="{StaticResource QuadraticEaseOut}"/>
+        </Storyboard>
+
         <Style x:Key="ModernTextBoxStyle" TargetType="TextBox">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Foreground" Value="{StaticResource LightTextBrush}" />
             <Setter Property="FontSize" Value="16" />
             <Setter Property="FontFamily" Value="Segoe UI" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="10,5" />
             <Setter Property="Height" Value="40" />
             <Setter Property="Margin" Value="0,10" />
+            <Setter Property="CaretBrush" Value="White" />
+            <Setter Property="SelectionBrush">
+                <Setter.Value>
+                    <SolidColorBrush Color="#5fc4b8" Opacity="0.5"/>
+                </Setter.Value>
+            </Setter>
+
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <Grid>
                             <Border Background="Transparent" CornerRadius="8" Padding="5">
                                 <Grid>
-                                    <ScrollViewer x:Name="PART_ContentHost" />
-                                    <Border x:Name="UnderlineBorder" Background="#5fc4b8" Height="2" VerticalAlignment="Bottom" Margin="0,0,0,-2" Opacity="0" />
+                                    <ScrollViewer x:Name="PART_ContentHost" 
+                                                  Background="Transparent"
+                                                  VerticalAlignment="Center"
+                                                  Margin="10,0"/>
+                                    <Border x:Name="UnderlineBorder" Background="{StaticResource PrimaryBrush}" Height="2" VerticalAlignment="Bottom" Margin="0,0,0,-2" Opacity="0" />
                                 </Grid>
                             </Border>
-                            <TextBlock x:Name="PlaceholderText" Text="{TemplateBinding Tag}" Foreground="#7f7f7f" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed" />
+                            <TextBlock x:Name="PlaceholderText" 
+                                       Text="{TemplateBinding Tag}" 
+                                       Foreground="{StaticResource PlaceholderBrush}" 
+                                       VerticalAlignment="Center" 
+                                       Margin="20,0,0,0" 
+                                       Visibility="Collapsed"
+                                       FontFamily="{TemplateBinding FontFamily}"
+                                       FontSize="{TemplateBinding FontSize}"/>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -38,6 +100,7 @@
                             </Trigger>
                             <Trigger Property="IsFocused" Value="True">
                                 <Setter Property="Opacity" Value="1" TargetName="UnderlineBorder" />
+                                <Setter Property="Foreground" Value="{StaticResource LightTextBrush}" />
                             </Trigger>
                             <Trigger Property="Text" Value="">
                                 <Setter Property="Visibility" Value="Visible" TargetName="PlaceholderText" />
@@ -48,7 +111,6 @@
             </Setter>
         </Style>
 
-        <!-- Стиль для календаря -->
         <Style x:Key="ModernCalendarStyle" TargetType="Calendar">
             <Setter Property="Background" Value="#252c43" />
             <Setter Property="Foreground" Value="White" />
@@ -74,7 +136,7 @@
 
         <Style x:Key="ModernDatePickerStyle" TargetType="DatePicker">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Foreground" Value="{StaticResource LightTextBrush}" />
             <Setter Property="FontSize" Value="16" />
             <Setter Property="FontFamily" Value="Segoe UI" />
             <Setter Property="BorderThickness" Value="0" />
@@ -87,7 +149,6 @@
                         <Grid>
                             <Border Background="Transparent" CornerRadius="8" Padding="5">
                                 <Grid>
-                                    <!-- Поле ввода даты -->
                                     <DatePickerTextBox x:Name="PART_TextBox" 
                                                Foreground="{TemplateBinding Foreground}" 
                                                FontSize="{TemplateBinding FontSize}" 
@@ -100,19 +161,18 @@
                                                Margin="0,0,40,0" 
                                                IsReadOnly="True"
                                                Text=""/>
-                                    <!-- Подчеркивание -->
-                                    <Border x:Name="UnderlineBorder" Background="#5fc4b8" Height="2" VerticalAlignment="Bottom" Margin="0,0,0,-2" Opacity="0" />
+                                    <Border x:Name="UnderlineBorder" Background="{StaticResource PrimaryBrush}" Height="2" VerticalAlignment="Bottom" Margin="0,0,0,-2" Opacity="0" />
                                 </Grid>
                             </Border>
-                            <!-- Плейсхолдер -->
                             <TextBlock x:Name="PlaceholderText" 
                                Text="{TemplateBinding Tag}" 
-                               Foreground="#7f7f7f" 
+                               Foreground="{StaticResource PlaceholderBrush}" 
                                VerticalAlignment="Center" 
-                               Margin="10,0,0,0" 
+                               Margin="20,0,0,0" 
                                Visibility="Collapsed" 
-                               IsHitTestVisible="False" />
-                            <!-- Кнопка календаря -->
+                               IsHitTestVisible="False" 
+                               FontFamily="{TemplateBinding FontFamily}"
+                               FontSize="{TemplateBinding FontSize}"/>
                             <ToggleButton x:Name="PART_Button" 
                                    HorizontalAlignment="Right" 
                                    VerticalAlignment="Center" 
@@ -123,21 +183,19 @@
                                    BorderBrush="Transparent" 
                                    Focusable="False">
                                 <ToggleButton.Content>
-                                    <!-- Иконка календаря Material Design -->
                                     <materialDesign:PackIcon Kind="Calendar" 
                                                      VerticalAlignment="Center" 
                                                      HorizontalAlignment="Center" 
-                                                     Foreground="#5fc4b8" />
+                                                     Foreground="{StaticResource PrimaryBrush}" />
                                 </ToggleButton.Content>
                             </ToggleButton>
-                            <!-- Календарь -->
                             <Popup x:Name="PART_Popup" 
                            Placement="Bottom" 
                            PlacementTarget="{Binding ElementName=PART_Button}" 
                            StaysOpen="False"
                            IsOpen="{Binding IsChecked, ElementName=PART_Button}">
                                 <Border Background="#252c43" 
-                                BorderBrush="#5fc4b8" 
+                                BorderBrush="{StaticResource PrimaryBrush}" 
                                 BorderThickness="1" 
                                 CornerRadius="8" 
                                 Padding="5">
@@ -149,15 +207,12 @@
                             </Popup>
                         </Grid>
                         <ControlTemplate.Triggers>
-                            <!-- Анимация при наведении -->
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Opacity" Value="1" TargetName="UnderlineBorder" />
                             </Trigger>
-                            <!-- Анимация при фокусе -->
                             <Trigger Property="IsFocused" Value="True">
                                 <Setter Property="Opacity" Value="1" TargetName="UnderlineBorder" />
                             </Trigger>
-                            <!-- Плейсхолдер -->
                             <Trigger Property="Text" Value="">
                                 <Setter Property="Visibility" Value="Visible" TargetName="PlaceholderText" />
                             </Trigger>
@@ -170,12 +225,20 @@
         <Style TargetType="{x:Type DatePickerTextBox}">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource LightTextBrush}" />
+            <Setter Property="CaretBrush" Value="White" />
+            <Setter Property="SelectionBrush">
+                <Setter.Value>
+                    <SolidColorBrush Color="#5fc4b8" Opacity="0.5"/>
+                </Setter.Value>
+            </Setter>
+
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type DatePickerTextBox}">
                         <Grid>
                             <Grid x:Name="WatermarkContent" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
-                                <ScrollViewer x:Name="PART_ContentHost" Margin="0" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                                <ScrollViewer x:Name="PART_ContentHost" Margin="10,0" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
                             </Grid>
                         </Grid>
                     </ControlTemplate>
@@ -188,7 +251,6 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Остальные стили -->
         <Style x:Key="MenuButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
@@ -208,19 +270,16 @@
                                 BorderThickness="0" 
                                 CornerRadius="5">
                             <Grid>
-                                <!-- Градиентный фон -->
                                 <Border x:Name="gradientBorder" 
                                         Background="#252c43" 
                                         CornerRadius="5">
                                 </Border>
-                                <!-- Текст кнопки -->
                                 <ContentPresenter x:Name="contentPresenter" 
                                                   HorizontalAlignment="Center" 
                                                   VerticalAlignment="Center" />
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <!-- Анимация при наведении -->
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" TargetName="gradientBorder">
                                     <Setter.Value>
@@ -232,7 +291,6 @@
                                 </Setter>
                                 <Setter Property="Opacity" Value="0.9" TargetName="gradientBorder" />
                             </Trigger>
-                            <!-- Анимация при нажатии -->
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter Property="Background" TargetName="gradientBorder">
                                     <Setter.Value>
@@ -283,7 +341,6 @@
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Заголовок страницы -->
         <TextBlock Text="Редактирование профиля" 
                    HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,20"
                    Style="{StaticResource SoftHeaderTextBlockStyle}">
@@ -292,32 +349,45 @@
             </TextBlock.Effect>
         </TextBlock>
 
-        <!-- Аватар и кнопка изменения аватара -->
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,80,0,0">
-            <Grid Width="130" Height="130" HorizontalAlignment="Center" VerticalAlignment="Center">
-
-                <Ellipse Width="130" Height="130" Fill="#5fc4b8" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Grid x:Name="mainGrid" Width="140" Height="140" HorizontalAlignment="Center" VerticalAlignment="Center" >
+                <Ellipse x:Name="circleFill" Width="140" Height="140">
+                    <Ellipse.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="{StaticResource PrimaryColor}" Offset="0"/>
+                            <GradientStop Color="{StaticResource AccentColor}" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Ellipse.Fill>
                     <Ellipse.Effect>
-                        <DropShadowEffect ShadowDepth="3" BlurRadius="10" Color="Black" Opacity="0.5"/>
+                        <DropShadowEffect ShadowDepth="3" BlurRadius="15" Color="#1b2339" Opacity="0.8"/>
                     </Ellipse.Effect>
                 </Ellipse>
 
-                <Image x:Name="AvatarImage" Stretch="UniformToFill" Width="130" Height="130">
+                <Image x:Name="AvatarImage" Source="../avatar/man1.png" Stretch="UniformToFill" Width="132" Height="132">
                     <Image.Clip>
-                        <EllipseGeometry Center="65,65" RadiusX="65" RadiusY="65"/>
+                        <EllipseGeometry Center="66,66" RadiusX="66" RadiusY="66"/>
                     </Image.Clip>
                     <Image.Effect>
-                        <DropShadowEffect ShadowDepth="0" BlurRadius="10" Color="#5fc4b8" Opacity="0.8"/>
+                        <DropShadowEffect ShadowDepth="0" BlurRadius="10" Color="{StaticResource PrimaryColor}" Opacity="0.5"/>
                     </Image.Effect>
+                    <Image.RenderTransform>
+                        <ScaleTransform CenterX="66" CenterY="66"/>
+                    </Image.RenderTransform>
                 </Image>
 
-                <Ellipse Width="130" Height="130" Fill="Transparent" Stroke="#333333" StrokeThickness="3" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Ellipse x:Name="avatarOverlay" Width="132" Height="132" Fill="#1b2339" Opacity="0">
+                    <Ellipse.Clip>
+                        <EllipseGeometry Center="66,66" RadiusX="66" RadiusY="66"/>
+                    </Ellipse.Clip>
+                </Ellipse>
+
+                <Ellipse Width="20" Height="20" Fill="#4CAF50" Stroke="#1b2339" StrokeThickness="2"
+                         HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8"/>
             </Grid>
             <Button Content="Изменить аватар" HorizontalAlignment="Center" Width="150" Margin="0,15" 
                     Style="{StaticResource MenuButtonStyle}" Click="ChangeAvatarButton_Click"/>
         </StackPanel>
 
-        <!-- Форма редактирования профиля -->
         <Grid x:Name="ProfileGrid" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="20,20">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*"/>
@@ -347,11 +417,9 @@
             </StackPanel>
         </Grid>
 
-        <!-- Кнопка сохранения изменений -->
         <Button Grid.Row="2" Content="Сохранить изменения" HorizontalAlignment="Center" VerticalAlignment="Bottom" Width="200" Margin="0,20,0,0" 
                 Style="{StaticResource MenuButtonStyle}" Click="SaveChangesButton_Click"/>
 
-        <!-- Скрытый Frame для аватара -->
         <Frame x:Name="AvatarFrame" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="Collapsed"/>
 
     </Grid>

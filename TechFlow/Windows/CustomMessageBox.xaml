@@ -5,76 +5,69 @@
         Title="Message Box"
         WindowStartupLocation="CenterScreen"
         Width="400" Height="250"
-        Background="#1e263f"
+        Background="Transparent"
         ResizeMode="NoResize"
         WindowStyle="None"
         AllowsTransparency="True">
 
     <Window.Resources>
-        <!-- Стиль для текстовых блоков -->
-        <Style x:Key="SoftTextBlockStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#E0E0E0" />
-            <Setter Property="FontSize" Value="20" />
-            <Setter Property="FontFamily" Value="Segoe UI" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Opacity" Value="0.9" />
+        <Color x:Key="PrimaryColor">#5fc4b8</Color>
+        <Color x:Key="DarkPrimaryColor">#3d8f7a</Color>
+        <Color x:Key="BackgroundColor">#1b2339</Color>
+        <Color x:Key="SecondaryBackgroundColor">#252C43</Color>
+        <Color x:Key="TextColor">#E0E0E0</Color>
+        <Color x:Key="LightTextColor">#FFFFFF</Color>
+        <Color x:Key="ErrorColor">#FF5252</Color>
+        <Color x:Key="HoverColor">#3a4a6b</Color>
+
+        <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
+        <SolidColorBrush x:Key="DarkPrimaryBrush" Color="{StaticResource DarkPrimaryColor}"/>
+        <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}"/>
+        <SolidColorBrush x:Key="SecondaryBackgroundBrush" Color="{StaticResource SecondaryBackgroundColor}"/>
+        <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
+        <SolidColorBrush x:Key="LightTextBrush" Color="{StaticResource LightTextColor}"/>
+        <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}"/>
+        <SolidColorBrush x:Key="HoverBrush" Color="{StaticResource HoverColor}"/>
+
+        <Style x:Key="MessageTextBlockStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="20,10"/>
+            <Setter Property="Opacity" Value="0.9"/>
         </Style>
 
-        <!-- Стиль для кнопок -->
-        <Style x:Key="MenuButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Padding" Value="10,5" />
-            <Setter Property="HorizontalContentAlignment" Value="Center" />
-            <Setter Property="FontSize" Value="16" />
-            <Setter Property="FontWeight" Value="Bold" />
+        <Style x:Key="MessageBoxButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="MinWidth" Value="100"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" 
-                        Background="{TemplateBinding Background}" 
-                        BorderBrush="{TemplateBinding BorderBrush}" 
-                        BorderThickness="0" 
-                        CornerRadius="5">
-                            <Grid>
-                                <Border x:Name="gradientBorder" 
                                 Background="{TemplateBinding Background}" 
-                                CornerRadius="5">
-                                </Border>
-                                <ContentPresenter x:Name="contentPresenter" 
-                                          HorizontalAlignment="Center" 
-                                          VerticalAlignment="Center" />
-                            </Grid>
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="0" 
+                                CornerRadius="6">
+                            <ContentPresenter x:Name="contentPresenter" 
+                                      HorizontalAlignment="Center" 
+                                      VerticalAlignment="Center"
+                                      Margin="{TemplateBinding Padding}"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <!-- Анимация при наведении -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" TargetName="gradientBorder">
-                                    <Setter.Value>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                            <GradientStop Color="#FF6B6B" Offset="0" />
-                                            <!-- Яркий красный -->
-                                            <GradientStop Color="#FF2E2E" Offset="1" />
-                                            <!-- Тёмный красный -->
-                                        </LinearGradientBrush>
-                                    </Setter.Value>
-                                </Setter>
-                                <Setter Property="Opacity" Value="0.9" TargetName="gradientBorder" />
+                                <Setter Property="Background" Value="{StaticResource DarkPrimaryBrush}" TargetName="border"/>
                             </Trigger>
-                            <!-- Анимация при нажатии -->
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" TargetName="gradientBorder">
-                                    <Setter.Value>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                            <GradientStop Color="#FF2E2E" Offset="0" />
-                                            <!-- Тёмный красный -->
-                                            <GradientStop Color="#FF6B6B" Offset="1" />
-                                            <!-- Яркий красный -->
-                                        </LinearGradientBrush>
-                                    </Setter.Value>
-                                </Setter>
-                                <Setter Property="Opacity" Value="0.8" TargetName="gradientBorder" />
+                                <Setter Property="Background" Value="#2a7a6a" TargetName="border"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -82,64 +75,108 @@
             </Setter>
         </Style>
 
-        <!-- Стиль для текста в MessageBox -->
-        <Style x:Key="MessageBoxTextStyle" TargetType="TextBlock" BasedOn="{StaticResource SoftTextBlockStyle}">
-            <Setter Property="FontSize" Value="16" />
-            <Setter Property="Margin" Value="20,10" />
+        <Style x:Key="WindowHeaderStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource SecondaryBackgroundBrush}"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="CornerRadius" Value="8,8,0,0"/>
+            <Setter Property="BorderThickness" Value="0"/>
         </Style>
 
-        <!-- Стиль для кнопок в MessageBox -->
-        <Style x:Key="MessageBoxButtonStyle" TargetType="Button" BasedOn="{StaticResource MenuButtonStyle}">
-            <Setter Property="Width" Value="100" />
-            <Setter Property="Height" Value="40" />
-        </Style>
+        <Style x:Key="CloseButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border x:Name="hoverBorder" 
+                                    Background="Transparent" 
+                                    CornerRadius="0,8,0,0"
+                                    Margin="0,0,0,0"
+                                    Width="40"
+                                    Height="40"/>
 
-        <!-- Красный градиент: от яркого к непрозрачному -->
-        <LinearGradientBrush x:Key="RedGradientBrush" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#f4324d" Offset="0" />
-            <!-- Яркий красный -->
-            <GradientStop Color="#222a40" Offset="1" />
-            <!-- Тёмный красный с прозрачностью -->
-        </LinearGradientBrush>
+                            <materialDesign:PackIcon x:Name="closeIcon" 
+                                                   Kind="WindowClose" 
+                                                   Width="18" 
+                                                   Height="18"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   Opacity="0.7"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="White" TargetName="hoverBorder"/>
+                                <Setter Property="Opacity" Value="0.2" TargetName="hoverBorder"/>
+                                <Setter Property="Foreground" Value="White" TargetName="closeIcon"/>
+                                <Setter Property="Opacity" Value="1.0" TargetName="closeIcon"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid>
-        <!-- Кастомный заголовок окна с красным градиентом -->
-        <Border Background="{StaticResource RedGradientBrush}" 
-                Height="30" 
-                VerticalAlignment="Top" 
-                MouseLeftButtonDown="Border_MouseLeftButtonDown">
-            <StackPanel Orientation="Horizontal" 
-                        HorizontalAlignment="Right" 
-                        VerticalAlignment="Center">
-                <!-- Кнопка закрытия -->
-                <Button Content="X" 
-                        Style="{StaticResource MenuButtonStyle}" 
-                        Width="30" 
-                        Height="30" 
-                        Click="CloseButton_Click" />
-            </StackPanel>
+        <Border Margin="10" CornerRadius="8">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="20" ShadowDepth="0" Color="Black" Opacity="0.3"/>
+            </Border.Effect>
+
+            <Border Background="{StaticResource SecondaryBackgroundBrush}" 
+                    CornerRadius="8"
+                    BorderThickness="1"
+                    BorderBrush="#3a4a6b">
+                <Grid>
+                    <Border Style="{StaticResource WindowHeaderStyle}" 
+                            MouseLeftButtonDown="Border_MouseLeftButtonDown">
+                        <Grid>
+                            <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                       Foreground="{StaticResource TextBrush}"
+                                       FontSize="16"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center"
+                                       Margin="15,0"
+                                       Opacity="0.9"/>
+
+                            <Grid HorizontalAlignment="Right" Width="40">
+                                <Button Style="{StaticResource CloseButtonStyle}" 
+                                        Click="CloseButton_Click"
+                                        HorizontalAlignment="Center"/>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,40,0,60">
+                        <TextBlock x:Name="MessageContainer" 
+                                   Style="{StaticResource MessageTextBlockStyle}" 
+                                   VerticalAlignment="Center"/>
+                    </ScrollViewer>
+
+                    <Border Background="{StaticResource SecondaryBackgroundBrush}"
+                            VerticalAlignment="Bottom"
+                            Height="60"
+                            CornerRadius="0,0,8,8">
+                        <StackPanel x:Name="ButtonContainer" 
+                                    Orientation="Horizontal" 
+                                    HorizontalAlignment="Center" 
+                                    VerticalAlignment="Center">
+                            <Button x:Name="OkButton" 
+                                    Content="OK" 
+                                    Style="{StaticResource MessageBoxButtonStyle}" 
+                                    Click="OkButton_Click"
+                                    Margin="5"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
         </Border>
-
-        <!-- Основной текст сообщения -->
-        <TextBlock x:Name="MessageContainer" 
-                   Style="{StaticResource MessageBoxTextStyle}" 
-                   TextWrapping="Wrap" 
-                   HorizontalAlignment="Center" 
-                   VerticalAlignment="Center" 
-                   Margin="20" />
-
-        <!-- Кнопка "OK" с красным градиентом -->
-        <StackPanel x:Name="ButtonContainer" 
-                    Orientation="Horizontal" 
-                    HorizontalAlignment="Center" 
-                    VerticalAlignment="Bottom" 
-                    Margin="0,0,0,30">
-            <Button x:Name="OkButton" 
-                    Content="OK" 
-                    Style="{StaticResource MessageBoxButtonStyle}" 
-                    Click="OkButton_Click"
-                    Background="{StaticResource RedGradientBrush}" />
-        </StackPanel>
     </Grid>
 </Window>

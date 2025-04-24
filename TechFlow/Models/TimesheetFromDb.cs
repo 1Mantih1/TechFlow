@@ -9,6 +9,32 @@ namespace TechFlow.Models
 {
     public class TimesheetFromDb
     {
+        public bool IsAdmin(int employeeId)
+        {
+            try
+            {
+                using (NpgsqlConnection connect = new NpgsqlConnection(DbConnection.connectionStr))
+                {
+                    connect.Open();
+
+                    string sqlExp = @"SELECT 1 FROM employee e
+                                    JOIN employee_role er ON e.role_id = er.employee_role_id
+                                    WHERE e.employee_id = @employeeId 
+                                    AND er.employee_role_name = 'Администратор'";
+
+                    NpgsqlCommand cmd = new NpgsqlCommand(sqlExp, connect);
+                    cmd.Parameters.AddWithValue("@employeeId", employeeId);
+
+                    return cmd.ExecuteScalar() != null;
+                }
+            }
+            catch (NpgsqlException ex)
+            {
+                MessageBox.Show("Ошибка при проверке роли администратора: " + ex.Message);
+                return false;
+            }
+        }
+
         public List<Timesheet> LoadTimesheets()
         {
             List<Timesheet> timesheets = new List<Timesheet>();
@@ -20,7 +46,7 @@ namespace TechFlow.Models
                     connection.Open();
 
                     string sqlExp = @"
-                        SELECT t.timesheet_id, t.work_date, t.employee_id, ws.status_code, ws.description
+                        SELECT t.timesheet_id, t.work_date, t.employee_id, t.check_in_time, ws.status_code, ws.description
                         FROM public.timesheet t
                         JOIN public.work_status ws ON t.code_id = ws.id
                         ORDER BY t.timesheet_id;";
@@ -39,7 +65,8 @@ namespace TechFlow.Models
                                 Convert.ToInt32(reader["timesheet_id"]),
                                 Convert.ToDateTime(reader["work_date"]),
                                 Convert.ToInt32(reader["employee_id"]),
-                                status
+                                status,
+                                reader["check_in_time"] != DBNull.Value ? (DateTime?)Convert.ToDateTime(reader["check_in_time"]) : null
                             ));
                         }
                     }
@@ -53,7 +80,7 @@ namespace TechFlow.Models
             return timesheets;
         }
 
-        public void UpdateStatus(string status)
+        public DateTime? GetCheckInTime(int employeeId, DateTime date)
         {
             using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
             {
@@ -61,10 +88,40 @@ namespace TechFlow.Models
                 {
                     connection.Open();
 
-                    // Проверяем, есть ли уже запись за сегодня
+                    string sqlExp = @"
+                        SELECT check_in_time FROM public.timesheet 
+                        WHERE employee_id = @employeeId 
+                        AND work_date = @workDate
+                        AND check_in_time IS NOT NULL;";
+
+                    using (NpgsqlCommand command = new NpgsqlCommand(sqlExp, connection))
+                    {
+                        command.Parameters.AddWithValue("@employeeId", employeeId);
+                        command.Parameters.AddWithValue("@workDate", date.Date);
+
+                        var result = command.ExecuteScalar();
+                        return result != DBNull.Value && result != null ? (DateTime?)Convert.ToDateTime(result) : null;
+                    }
+                }
+                catch (NpgsqlException ex)
+                {
+                    MessageBox.Show("Ошибка получения времени отметки: " + ex.Message);
+                    return null;
+                }
+            }
+        }
+
+        public void UpdateStatus(string status, DateTime checkInTime)
+        {
+            using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
+            {
+                try
+                {
+                    connection.Open();
+
                     string checkQuery = @"
-                SELECT COUNT(*) FROM public.timesheet 
-                WHERE employee_id = @employeeId AND work_date = @workDate;";
+                        SELECT COUNT(*) FROM public.timesheet 
+                        WHERE employee_id = @employeeId AND work_date = @workDate;";
 
                     using (NpgsqlCommand checkCommand = new NpgsqlCommand(checkQuery, connection))
                     {
@@ -76,22 +133,22 @@ namespace TechFlow.Models
                         if (count > 0)
                         {
                             CustomMessageBox.Show("Вы уже отмечались сегодня. Повторная отметка невозможна.");
-                            return; // Прерываем выполнение метода
+                            return;
                         }
                     }
 
-                    // Если отметки ещё нет, выполняем вставку
                     string sqlExp = @"
-                INSERT INTO public.timesheet (employee_id, work_date, code_id)
-                SELECT @employeeId, @workDate, ws.id 
-                FROM public.work_status ws
-                WHERE ws.description = @status;";
+                        INSERT INTO public.timesheet (employee_id, work_date, code_id, check_in_time)
+                        SELECT @employeeId, @workDate, ws.id, @checkInTime
+                        FROM public.work_status ws
+                        WHERE ws.description = @status;";
 
                     using (NpgsqlCommand command = new NpgsqlCommand(sqlExp, connection))
                     {
                         command.Parameters.AddWithValue("@status", status);
                         command.Parameters.AddWithValue("@employeeId", Authorization.currentUser.UserId);
                         command.Parameters.AddWithValue("@workDate", DateTime.Now.Date);
+                        command.Parameters.AddWithValue("@checkInTime", checkInTime);
 
                         command.ExecuteNonQuery();
                     }
@@ -101,6 +158,31 @@ namespace TechFlow.Models
                 catch (NpgsqlException ex)
                 {
                     MessageBox.Show("Ошибка добавления записи: " + ex.Message);
+                }
+            }
+        }
+
+        public void CreateInitialTimesheet(int employeeId)
+        {
+            using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
+            {
+                try
+                {
+                    connection.Open();
+
+                    string sqlExp = @"
+                        INSERT INTO public.timesheet (employee_id)
+                        VALUES (@employeeId);";
+
+                    using (NpgsqlCommand command = new NpgsqlCommand(sqlExp, connection))
+                    {
+                        command.Parameters.AddWithValue("@employeeId", employeeId);
+                        command.ExecuteNonQuery();
+                    }
+                }
+                catch (NpgsqlException ex)
+                {
+                    MessageBox.Show("Ошибка создания табеля: " + ex.Message);
                 }
             }
         }

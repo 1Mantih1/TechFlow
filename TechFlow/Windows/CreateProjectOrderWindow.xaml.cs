@@ -1,13 +1,18 @@
-﻿using System;
+﻿using MaterialDesignThemes.Wpf;
+using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using TechFlow.Classes;
+using TechFlow.Models;
 
 namespace TechFlow.Windows
 {
     public partial class CreateProjectOrderWindow : Window
     {
         private int currentStep = 1;
-
+        ProjectFromDb projectFromDb = new ProjectFromDb();
         public CreateProjectOrderWindow()
         {
             InitializeComponent();
@@ -154,14 +159,39 @@ namespace TechFlow.Windows
         {
             try
             {
-                // Здесь будет код сохранения проекта в БД
-                MessageBox.Show("Заказ проекта успешно создан! Менеджер свяжется с вами для уточнения деталей.",
-                              "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                this.Close();
+                int currentClientId = Authorization.currentClient.ClientId;
+
+                bool success = projectFromDb.CreateProject(
+                    projectName: ProjectNameTextBox.Text,
+                    projectDescription: ProjectDescriptionTextBox.Text,
+                    startDate: StartDatePicker.SelectedDate ?? DateTime.Today,
+                    endDate: EndDatePicker.SelectedDate,
+                    clientId: currentClientId,
+                    projectType: ProjectTypeComboBox.SelectedItem?.ToString(),
+                    budget: decimal.TryParse(BudgetTextBox.Text, out var budget) ? budget : (decimal?)null,
+                    requirements: RequirementsTextBox.Text,
+                    isUrgent: UrgentCheckBox.IsChecked == true,
+                    isConfidential: ConfidentialCheckBox.IsChecked == true
+                );
+
+                if (success)
+                {
+                    MessageBox.Show("Заказ проекта успешно создан и отправлен на модерацию!", "Успех",
+                                  MessageBoxButton.OK, MessageBoxImage.Information);
+                    this.Close();
+                    Authorization authorization = new Authorization();
+                    authorization.Show();
+                }
+                else
+                {
+                    MessageBox.Show("Не удалось создать проект", "Ошибка",
+                                  MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при создании заказа: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка",
+                              MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -181,6 +211,55 @@ namespace TechFlow.Windows
             {
                 this.Close();
             }
+        }
+
+        private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.WindowState = WindowState.Minimized;
+        }
+
+        private void MaximizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (WindowState == WindowState.Maximized)
+            {
+                WindowState = WindowState.Normal;
+                ((PackIcon)((Button)sender).Content).Kind = PackIconKind.WindowMaximize;
+            }
+            else
+            {
+                WindowState = WindowState.Maximized;
+                ((PackIcon)((Button)sender).Content).Kind = PackIconKind.WindowRestore;
+            }
+        }
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
+        private void WindowHeader_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                this.DragMove();
+            }
+        }
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateWindowCorners();
+        }
+
+        private void UpdateWindowCorners()
+        {
+            double radius = (WindowState == WindowState.Maximized) ? 0 : 16;
+
+            MainBorder.CornerRadius = new CornerRadius(radius);
+
+            this.Clip = new RectangleGeometry(
+                new Rect(0, 0, ActualWidth, ActualHeight),
+                radius,
+                radius
+            );
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace TechFlow.Windows
 {
@@ -10,10 +11,19 @@ namespace TechFlow.Windows
             InitializeComponent();
         }
 
-        public static MessageBoxResult Show(string message)
+        public static MessageBoxResult Show(string message, string title = "Сообщение")
         {
-            var dialog = new CustomMessageBox() { Title = "Ошибка" };
+            var dialog = new CustomMessageBox() { Title = title };
             dialog.MessageContainer.Text = message;
+            dialog.ShowDialog();
+            return MessageBoxResult.OK;
+        }
+
+        public static MessageBoxResult ShowError(string message, string title = "Ошибка")
+        {
+            var dialog = new CustomMessageBox() { Title = title };
+            dialog.MessageContainer.Text = message;
+            dialog.MessageContainer.Foreground = dialog.FindResource("ErrorBrush") as SolidColorBrush;
             dialog.ShowDialog();
             return MessageBoxResult.OK;
         }

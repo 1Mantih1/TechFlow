@@ -3,232 +3,222 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Data;
-using System.Windows.Media;
 using TechFlow.Classes;
-using TechFlow.Models;
 using TechFlow.Windows;
+using TechFlow.Models;
 
 namespace TechFlow.Pages
 {
     public partial class TimesheetPage : Page
     {
-        public ObservableCollection<TimesheetDisplay> Timesheets { get; set; }
+        private readonly TimesheetFromDb _timesheetDb;
+        private List<Timesheet> _allTimesheets = new List<Timesheet>();
+
+        public ObservableCollection<TimesheetDisplay> Timesheets { get; } = new ObservableCollection<TimesheetDisplay>();
 
         public TimesheetPage()
         {
             InitializeComponent();
-            this.DataContext = this;
-            Timesheets = new ObservableCollection<TimesheetDisplay>();
-            LoadTimesheets();
+            _timesheetDb = new TimesheetFromDb();
+            DataContext = this;
+            Loaded += OnPageLoaded;
+        }
+
+        private void OnPageLoaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                LoadTimesheets();
+                CheckAdminVisibility();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при загрузке страницы: {ex.Message}");
+            }
+        }
+
+        private void CheckAdminVisibility()
+        {
+            try
+            {
+                AdminButton.Visibility = _timesheetDb.IsAdmin(Authorization.currentUser.UserId)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка проверки прав администратора: {ex.Message}");
+            }
         }
 
         private void LoadTimesheets()
         {
-            TimesheetFromDb timesheetDb = new TimesheetFromDb();
-            List<Timesheet> timesheetList = timesheetDb.LoadTimesheets()
-                                                        .Where(t => t.EmployeeId == Authorization.currentUser.UserId)
-                                                        .ToList();
-
-            if (timesheetList.Count == 0)
+            try
             {
-                CustomMessageBox.Show("Нет данных для отображения!");
-                return;
-            }
+                _allTimesheets = _timesheetDb.LoadTimesheets()
+                    ?.Where(t => t != null &&
+                                Authorization.currentUser != null &&
+                                t.EmployeeId == Authorization.currentUser.UserId)
+                    ?.ToList() ?? new List<Timesheet>();
 
-            var currentTimesheet = timesheetList.FirstOrDefault(t => t.WorkDate.Date == DateTime.Now.Date); // Фильтруем по текущей дате
-            if (currentTimesheet != null)
-            {
-                string status = currentTimesheet.Status.Description;
-                StatusTextBlock.Text = $"Статус задачи: {status}";
+                Timesheets.Clear();
 
-                // Проверка статуса и отображение времени работы
-                if (status == "На рабочем месте")
+                for (int day = 1; day <= 31; day++)
                 {
-                    DateTime workStartTime = DateTime.Now;
-                    DateTime workEndTime = workStartTime.AddHours(8);
-                    if (workEndTime.Hour >= 20)
+                    var dayEntry = new TimesheetDisplay { Day = day.ToString("00") };
+
+                    for (int month = 1; month <= 12; month++)
                     {
-                        workEndTime = new DateTime(workStartTime.Year, workStartTime.Month, workStartTime.Day, 20, 0, 0);
+                        var record = _allTimesheets.FirstOrDefault(t =>
+                            t.WorkDate.Day == day &&
+                            t.WorkDate.Month == month);
+
+                        string status = record?.Status?.Description ?? "";
+                        dayEntry.SetWorkType(month - 1, status);
                     }
 
-                    string timeWorked = $"{workStartTime:HH:mm} - {workEndTime:HH:mm}";
-                    TimeWorkedTextBlock.Text = $"Ваше текущее время работы: {timeWorked}";
+                    Timesheets.Add(dayEntry);
+                }
 
-                    TimeWorkedTextBlock.Visibility = Visibility.Visible; // Показываем блок времени работы
-                }
-                else
-                {
-                    TimeWorkedTextBlock.Visibility = Visibility.Collapsed; // Скрываем блок времени работы, если не на рабочем месте
-                }
+                UpdateCurrentStatus();
+                UpdateUserInfo();
             }
-            else
+            catch (Exception ex)
             {
-                StatusTextBlock.Text = "Не определен";
-                TimeWorkedTextBlock.Visibility = Visibility.Collapsed; // Скрываем блок времени работы, если нет данных на текущий день
-            }
-
-            UserTimesheetTextBlock.Text = "Занятость сотрудника" + "\n" +
-                                          Authorization.currentUser.LastName + " " +
-                                          Authorization.currentUser.FirstName;
-
-            Timesheets.Clear(); // Очистить коллекцию перед добавлением новых данных
-
-            for (int day = 1; day <= 31; day++)
-            {
-                var dayEntry = new TimesheetDisplay { Day = day.ToString("D2") };
-
-                foreach (var monthIndex in Enumerable.Range(1, 12))
-                {
-                    var dayRecord = timesheetList.FirstOrDefault(t => t.WorkDate.Month == monthIndex && t.WorkDate.Day == day);
-                    string statusDescription = dayRecord?.Status.Description ?? ""; // Берём описание статуса
-
-                    // Присваиваем статус соответствующему месяцу
-                    string monthName = new DateTime(1, monthIndex, 1).ToString("MMMM", new System.Globalization.CultureInfo("ru-RU"));
-                    dayEntry.SetWorkType(monthName, statusDescription);
-                }
-
-                Timesheets.Add(dayEntry);  // Добавляем запись в коллекцию
+                MessageBox.Show($"Ошибка при загрузке табеля: {ex.Message}");
             }
         }
 
+        private void UpdateCurrentStatus()
+        {
+            try
+            {
+                var todayRecord = _allTimesheets.FirstOrDefault(t => t.WorkDate.Date == DateTime.Today);
 
+                if (todayRecord != null)
+                {
+                    StatusTextBlock.Text = todayRecord.Status?.Description ?? "Не определен";
 
+                    if (todayRecord.Status?.Description == "На рабочем месте")
+                    {
+                        var startTime = _timesheetDb.GetCheckInTime(Authorization.currentUser.UserId, DateTime.Today);
+                        if (startTime != null)
+                        {
+                            var endTime = startTime.Value.AddHours(8);
+                            TimeWorkedTextBlock.Text = $"{startTime.Value:HH:mm} - {endTime:HH:mm}";
+                            TimeWorkedTextBlock.Visibility = Visibility.Visible;
+                            return;
+                        }
+                    }
+                }
+
+                StatusTextBlock.Text = "Не определен";
+                TimeWorkedTextBlock.Visibility = Visibility.Collapsed;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка обновления статуса: {ex.Message}");
+            }
+        }
+
+        private void UpdateUserInfo()
+        {
+            try
+            {
+                if (Authorization.currentUser != null)
+                {
+                    UserTimesheetTextBlock.Text =
+                        $"Табель учета времени: {Authorization.currentUser.LastName} " +
+                        $"{Authorization.currentUser.FirstName}";
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка обновления информации пользователя: {ex.Message}");
+            }
+        }
+
+        private void RefreshButton_Click(object sender, RoutedEventArgs e)
+        {
+            LoadTimesheets();
+        }
 
         private void MarkButton_Click(object sender, RoutedEventArgs e)
         {
-            DateTime currentLocalTime = DateTime.Now;
-
-            // Проверка, что сегодня уже нельзя работать (если статус уже "Завершил работу")
-            TimesheetFromDb timesheetDb = new TimesheetFromDb();
-            List<Timesheet> timesheetList = timesheetDb.LoadTimesheets()
-                                                        .Where(t => t.EmployeeId == Authorization.currentUser.UserId &&
-                                                                    t.WorkDate.Date == currentLocalTime.Date)  // Проверка по текущей дате
-                                                        .ToList();
-
-            var currentTimesheet = timesheetList.FirstOrDefault(t => t.Status.Description == "Завершил работу");
-            if (currentTimesheet != null)
+            try
             {
-                MessageBox.Show("Вы уже завершили работу сегодня.");
-                return;  // Если уже завершена работа, не позволяем обновить статус
-            }
+                var currentTime = DateTime.Now.TimeOfDay;
+                var startWindow = new TimeSpan(8, 0, 0); // 8:00
+                var endWindow = new TimeSpan(12, 0, 0); // 12:00
 
-            // Обновляем статус на "На рабочем месте"
-            timesheetDb.UpdateStatus("На рабочем месте");
-
-            // Обновляем статус на UI
-            StatusTextBlock.Text = "Статус задачи: На рабочем месте";
-
-            // Показываем TimeWorkedTextBlock, если сотрудник на рабочем месте
-            TimeWorkedTextBlock.Visibility = Visibility.Visible;
-
-            DateTime workStartTime = currentLocalTime;
-            DateTime workEndTime = currentLocalTime.AddHours(8);
-
-            // Если время окончания работы больше 20:00, устанавливаем его на 20:00
-            if (workEndTime.Hour >= 20)
-            {
-                workEndTime = new DateTime(currentLocalTime.Year, currentLocalTime.Month, currentLocalTime.Day, 20, 0, 0);
-            }
-
-            string timeWorked = $"{workStartTime:HH:mm} - {workEndTime:HH:mm}";
-            TimeWorkedTextBlock.Text = $"Ваше текущее время работы: {timeWorked}";
-
-            // Сообщение о времени работы
-            MessageBox.Show($"Текущее время с ПК: {currentLocalTime}, Время начала работы: {workStartTime}, Время конца работы: {workEndTime}");
-            MessageBox.Show("Вы успешно отметились!");
-
-            // Установить статус на "Завершил работу" после окончания рабочего времени
-            Timer timer = new Timer((timerState) =>
-            {
-                if (DateTime.Now >= workEndTime)
+                if (currentTime < startWindow || currentTime > endWindow)
                 {
-                    timesheetDb.UpdateStatus("Завершил работу");
-
-                    // Обновляем статус в UI
-                    StatusTextBlock.Text = "Статус задачи: Завершил работу";
-
-                    // Сообщение
-                    MessageBox.Show("Рабочий день завершен. Статус обновлен.");
-
-                    // Перезагружаем данные и обновляем DataGrid
-                    LoadTimesheets();
-
-                    // Скрываем TimeWorkedTextBlock после завершения рабочего дня
-                    TimeWorkedTextBlock.Visibility = Visibility.Collapsed;
+                    MessageBox.Show("Отметка возможна только с 8:00 до 12:00");
+                    return;
                 }
-            }, null, workEndTime - DateTime.Now, Timeout.InfiniteTimeSpan);
-        }
-    }
 
-    public class GridConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value is DataGrid grid && targetType == typeof(Thickness))
-            {
-                var headersPresenter = FindVisualChild<DataGridColumnHeadersPresenter>(grid);
-                if (headersPresenter != null)
-                    return new Thickness(0, -headersPresenter.ActualHeight, 0, 0);
+                var todayRecord = _allTimesheets.FirstOrDefault(t =>
+                    t.WorkDate.Date == DateTime.Today);
+
+                if (todayRecord != null && todayRecord.Status?.Description == "На рабочем месте")
+                {
+                    MessageBox.Show("Вы уже отметились сегодня.");
+                    return;
+                }
+
+                _timesheetDb.UpdateStatus("На рабочем месте", DateTime.Now);
+
+                // Обновляем UI
+                var start = DateTime.Now;
+                var end = start.AddHours(8);
+
+                StatusTextBlock.Text = "На рабочем месте";
+                TimeWorkedTextBlock.Text = $"{start:HH:mm} - {end:HH:mm}";
+                TimeWorkedTextBlock.Visibility = Visibility.Visible;
+
+                MessageBox.Show("Вы успешно отметились!");
+                LoadTimesheets();
             }
-            return new Thickness();
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при отметке: {ex.Message}");
+            }
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-            => throw new NotImplementedException();
-
-        private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        private void AdminButton_Click(object sender, RoutedEventArgs e)
         {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-            {
-                var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is T result)
-                    return result;
-                result = FindVisualChild<T>(child);
-                if (result != null)
-                    return result;
-            }
-            return null;
+            // Здесь можно открыть окно для управления графиком сотрудников
+            //var adminWindow = new AdminTimesheetWindow();
+            //adminWindow.ShowDialog();
         }
     }
 
     public class TimesheetDisplay
     {
-        public string Day { get; set; }
-        public string January { get; set; }
-        public string February { get; set; }
-        public string March { get; set; }
-        public string April { get; set; }
-        public string May { get; set; }
-        public string June { get; set; }
-        public string July { get; set; }
-        public string August { get; set; }
-        public string September { get; set; }
-        public string October { get; set; }
-        public string November { get; set; }
-        public string December { get; set; }
+        public string Day { get; set; } = "";
+        public string[] MonthStatuses { get; } = new string[12];
 
-        public void SetWorkType(string month, string workType)
+        public void SetWorkType(int monthIndex, string workType)
         {
-            switch (month)
+            if (monthIndex >= 0 && monthIndex < 12)
             {
-                case "Январь": January = workType; break;
-                case "Февраль": February = workType; break;
-                case "Март": March = workType; break;
-                case "Апрель": April = workType; break;
-                case "Май": May = workType; break;
-                case "Июнь": June = workType; break;
-                case "Июль": July = workType; break;
-                case "Август": August = workType; break;
-                case "Сентябрь": September = workType; break;
-                case "Октябрь": October = workType; break;
-                case "Ноябрь": November = workType; break;
-                case "Декабрь": December = workType; break;
+                MonthStatuses[monthIndex] = workType ?? "";
             }
         }
+
+        public string January => MonthStatuses[0];
+        public string February => MonthStatuses[1];
+        public string March => MonthStatuses[2];
+        public string April => MonthStatuses[3];
+        public string May => MonthStatuses[4];
+        public string June => MonthStatuses[5];
+        public string July => MonthStatuses[6];
+        public string August => MonthStatuses[7];
+        public string September => MonthStatuses[8];
+        public string October => MonthStatuses[9];
+        public string November => MonthStatuses[10];
+        public string December => MonthStatuses[11];
     }
 }

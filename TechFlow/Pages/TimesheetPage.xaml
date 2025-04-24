@@ -7,38 +7,55 @@
       Background="#1b2339">
 
     <Page.Resources>
-        <!-- Стиль для DataGrid -->
-        <Style TargetType="DataGrid">
-            <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
-            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
-            <Style.Resources>
-                <Style TargetType="ScrollBar" BasedOn="{StaticResource {x:Type ScrollBar}}">
-                    <Setter Property="Background" Value="Transparent"/>
-                    <Style.Triggers>
-                        <Trigger Property="Orientation" Value="Vertical">
-                            <Setter Property="Margin" Value="0,0,0,0"/>
-                        </Trigger>
-                    </Style.Triggers>
-                </Style>
-            </Style.Resources>
-        </Style>
+        <SolidColorBrush x:Key="PrimaryColor" Color="#1b2339"/>
+        <SolidColorBrush x:Key="SecondaryColor" Color="#1E293B"/>
+        <SolidColorBrush x:Key="AccentColor" Color="#38BDF8"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#94A3B8"/>
+        <SolidColorBrush x:Key="HoverColor" Color="#334155"/>
+        <SolidColorBrush x:Key="BorderColor" Color="#64748B"/>
+        <SolidColorBrush x:Key="GridLineColor" Color="#334155"/>
+        <SolidColorBrush x:Key="CellSelectionColor" Color="#3C4A5E"/>
 
-        <!-- Стиль для иконок -->
-        <Style x:Key="ModernIcon" TargetType="materialDesign:PackIcon">
+        <Style x:Key="IconStyle" TargetType="materialDesign:PackIcon">
             <Setter Property="Width" Value="20"/>
             <Setter Property="Height" Value="20"/>
-            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
 
-        <!-- Стиль для плоских кнопок -->
-        <Style x:Key="ModernFlatButton" TargetType="Button">
-            <Setter Property="Background" Value="#1E293B"/>
-            <Setter Property="Foreground" Value="#94A3B8"/>
+        <Style x:Key="AccentIconStyle" TargetType="materialDesign:PackIcon" BasedOn="{StaticResource IconStyle}">
+            <Setter Property="Foreground" Value="{StaticResource AccentColor}"/>
+        </Style>
+
+        <Style x:Key="HeaderTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource AccentColor}"/>
+            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="BodyTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <Style x:Key="SecondaryTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource SecondaryColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Padding" Value="12 8"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
-            <Setter Property="Margin" Value="8,0,0,0"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -54,8 +71,13 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#334155"/>
-                                <Setter TargetName="content" Property="TextElement.Foreground" Value="#38BDF8"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource HoverColor}"/>
+                                <Setter TargetName="content" Property="TextElement.Foreground" Value="{StaticResource AccentColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource SecondaryColor}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentColor}"/>
+                                <Setter TargetName="border" Property="BorderThickness" Value="1"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -63,428 +85,389 @@
             </Setter>
         </Style>
 
-        <!-- Цвета для таблицы -->
-        <SolidColorBrush x:Key="AlternateRowBrush" Color="#1E293B" Opacity="0.3"/>
-        <SolidColorBrush x:Key="GridLineBrush" Color="#64748B" Opacity="0.5"/>
-        <SolidColorBrush x:Key="HoverRowBrush" Color="#334155"/>
-        <SolidColorBrush x:Key="SelectedRowBrush" Color="#334155"/>
-        <SolidColorBrush x:Key="SelectedBorderBrush" Color="#38BDF8"/>
+        <Style x:Key="IconButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="MinWidth" Value="0"/>
+            <Setter Property="Width" Value="40"/>
+        </Style>
 
-        <!-- Стиль строки с мгновенным выделением -->
-        <Style x:Key="InstantSelectionDataGridRowStyle" TargetType="DataGridRow">
+        <Style x:Key="ModernDataGridStyle" TargetType="DataGrid">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#E2E8F0"/>
-            <Setter Property="BorderBrush" Value="{StaticResource GridLineBrush}"/>
-            <Setter Property="BorderThickness" Value="0 0 0 1"/>
-            <Setter Property="MinHeight" Value="56"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RowDetailsVisibilityMode" Value="VisibleWhenSelected"/>
+            <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+            <Setter Property="ScrollViewer.PanningMode" Value="Both"/>
+            <Setter Property="Stylus.IsFlicksEnabled" Value="False"/>
+            <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="SelectionUnit" Value="Cell"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="CanUserDeleteRows" Value="False"/>
+            <Setter Property="CanUserReorderColumns" Value="False"/>
+            <Setter Property="CanUserResizeColumns" Value="True"/>
+            <Setter Property="CanUserResizeRows" Value="False"/>
+            <Setter Property="CanUserSortColumns" Value="True"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="AlternationCount" Value="2"/>
+            <Setter Property="RowHeight" Value="60"/>
+            <Setter Property="ColumnHeaderHeight" Value="40"/>
+            <Setter Property="GridLinesVisibility" Value="All"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource GridLineColor}"/>
+            <Setter Property="VerticalGridLinesBrush" Value="{StaticResource GridLineColor}"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+        </Style>
+
+        <Style x:Key="ModernDataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="{StaticResource SecondaryColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="12 8"/>
+            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridColumnHeader">
+                        <Grid>
+                            <Border x:Name="headerBorder"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="4"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter x:Name="contentPresenter"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="headerBorder" Property="Background" Value="{StaticResource HoverColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="headerBorder" Property="Background" Value="{StaticResource SecondaryColor}"/>
+                                <Setter TargetName="headerBorder" Property="BorderBrush" Value="{StaticResource AccentColor}"/>
+                                <Setter TargetName="headerBorder" Property="BorderThickness" Value="1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ModernDataGridRowStyle" TargetType="DataGridRow">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
-                        <Border x:Name="DGR_Border"
+                        <Border x:Name="rowBorder"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}">
-                            <Grid>
-                                <Grid.Style>
-                                    <Style TargetType="Grid">
-                                        <Setter Property="Background" Value="Transparent"/>
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="{StaticResource HoverRowBrush}"/>
-                                            </Trigger>
-                                            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType={x:Type DataGridRow}}}" Value="True">
-                                                <Setter Property="Background" Value="{StaticResource SelectedRowBrush}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Grid.Style>
-                                <DataGridCellsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
-                            </Grid>
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                SnapsToDevicePixels="True">
+                            <SelectiveScrollingGrid>
+                                <SelectiveScrollingGrid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </SelectiveScrollingGrid.ColumnDefinitions>
+                                <SelectiveScrollingGrid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </SelectiveScrollingGrid.RowDefinitions>
+                                <DataGridCellsPresenter Grid.Column="1"
+                                                        ItemsPanel="{TemplateBinding ItemsPanel}"
+                                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                <DataGridDetailsPresenter Grid.Column="1"
+                                                          Grid.Row="1"
+                                                          SelectiveScrollingGrid.SelectiveScrollingOrientation="{Binding AreRowDetailsFrozen, ConverterParameter={x:Static SelectiveScrollingOrientation.Vertical}, Converter={x:Static DataGrid.RowDetailsScrollingConverter}, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
+                                                          Visibility="{TemplateBinding DetailsVisibility}"/>
+                                <DataGridRowHeader Grid.RowSpan="2"
+                                                   SelectiveScrollingGrid.SelectiveScrollingOrientation="Vertical"
+                                                   Visibility="{Binding HeadersVisibility, ConverterParameter={x:Static DataGridHeadersVisibility.Row}, Converter={x:Static DataGrid.HeadersVisibilityConverter}, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"/>
+                            </SelectiveScrollingGrid>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="DGR_Border" Property="BorderBrush" Value="{StaticResource SelectedBorderBrush}"/>
-                                <Setter TargetName="DGR_Border" Property="BorderThickness" Value="1"/>
+                            <Trigger Property="AlternationIndex" Value="1">
+                                <Setter Property="Background" Value="#1E293B"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <Trigger Property="AlternationIndex" Value="1">
-                    <Setter Property="Background" Value="{StaticResource AlternateRowBrush}"/>
-                </Trigger>
-            </Style.Triggers>
         </Style>
 
-        <!-- Стиль для DataGrid -->
-        <Style x:Key="InstantSelectionDataGridStyle" TargetType="DataGrid" BasedOn="{StaticResource {x:Type DataGrid}}">
-            <Setter Property="SelectionUnit" Value="FullRow"/>
+        <Style x:Key="ModernDataGridCellStyle" TargetType="DataGridCell">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="RowStyle" Value="{StaticResource InstantSelectionDataGridRowStyle}"/>
-            <Setter Property="EnableRowVirtualization" Value="True"/>
-            <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
-            <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
-            <Setter Property="ColumnHeaderHeight" Value="40"/>
-            <Setter Property="HeadersVisibility" Value="Column"/>
-        </Style>
-
-        <!-- Стиль для текста в ячейках с обрезкой и всплывающей подсказкой -->
-        <Style x:Key="DynamicCellTextStyle" TargetType="TextBlock">
-            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-            <Setter Property="TextWrapping" Value="NoWrap"/>
-            <Setter Property="ToolTipService.ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=Text}"/>
-            <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Margin" Value="12,0,12,0"/>
-        </Style>
-
-        <Style x:Key="{x:Type DataGridColumnHeadersPresenter}" TargetType="{x:Type DataGridColumnHeadersPresenter}">
-            <Setter Property="Grid.ColumnSpan" Value="2" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type DataGridColumnHeadersPresenter}">
-                        <Grid>
-                            <DataGridColumnHeader IsHitTestVisible="False" Name="PART_FillerColumnHeader"/>
-                            <ItemsPresenter/>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Стиль для заголовков колонок -->
-        <Style x:Key="ModernColumnHeaderStyle" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#1E293B"/>
-            <Setter Property="Foreground" Value="#94A3B8"/>
-            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="12 8"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="8,6"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="DataGridColumnHeader">
-                        <Border Background="{TemplateBinding Background}"
-                                CornerRadius="4"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                          VerticalAlignment="Center"/>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border x:Name="cellBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter x:Name="contentPresenter"
+                                          VerticalAlignment="Center"
+                                          HorizontalAlignment="Stretch"
+                                          Margin="{TemplateBinding Padding}"
+                                          SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="cellBorder" Property="Background" Value="{StaticResource CellSelectionColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="cellBorder" Property="Background" Value="{StaticResource HoverColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#334155"/>
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="TextBlock.TextWrapping" Value="Wrap"/>
+            <Setter Property="TextBlock.TextTrimming" Value="None"/>
         </Style>
     </Page.Resources>
 
     <Grid>
-        <Border CornerRadius="12" Margin="20" Background="#1E293B">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="{StaticResource SecondaryColor}" Padding="16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <materialDesign:PackIcon Kind="ClockOutline" Style="{StaticResource AccentIconStyle}"/>
+                    <TextBlock Text="ТАБЕЛЬ УЧЕТА ВРЕМЕНИ" 
+                               Style="{StaticResource HeaderTextStyle}"
+                               Margin="12,0,0,0"/>
+                </StackPanel>
+
+                <Button Grid.Column="1" Click="RefreshButton_Click"
+                        Style="{StaticResource PrimaryButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Refresh" Style="{StaticResource IconStyle}"/>
+                        <TextBlock Text="Обновить" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Margin="16" Background="{StaticResource SecondaryColor}" CornerRadius="8">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- Верхняя панель с информацией -->
                 <Border Grid.Row="0" Background="#334155" CornerRadius="8" Margin="16" Padding="16">
-                    <StackPanel Orientation="Vertical">
-                        <TextBlock x:Name="UserTimesheetTextBlock"
-                               FontSize="26"
-                               FontFamily="Segoe UI Light"
-                               Foreground="#38BDF8"
-                               HorizontalAlignment="Center"
-                               Margin="0,0,0,16"
-                               TextAlignment="Center"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Button x:Name="MarkButton" 
-                                Style="{StaticResource ModernFlatButton}"
-                                Width="180"
-                                Height="40"
-                                Click="MarkButton_Click">
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="ClockCheckOutline" 
-                                                           Style="{StaticResource ModernIcon}"/>
-                                    <TextBlock Text="Отметиться" 
-                                           Margin="8,0,0,0" 
-                                           VerticalAlignment="Center"
-                                           FontSize="14"
-                                           FontFamily="Segoe UI Semibold"/>
-                                </StackPanel>
-                            </Button>
+                        <StackPanel>
+                            <TextBlock x:Name="UserTimesheetTextBlock"
+                                   Style="{StaticResource HeaderTextStyle}"
+                                   Margin="0,0,0,8"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="Статус: " Style="{StaticResource SecondaryTextStyle}"/>
+                                <TextBlock x:Name="StatusTextBlock" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="Отработано часов: " Style="{StaticResource SecondaryTextStyle}"/>
+                                <TextBlock x:Name="TimeWorkedTextBlock" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <TextBlock Text="Информация о вашем расписании:" 
-                               FontSize="16"
-                               FontFamily="Segoe UI Semibold"
-                               Foreground="#38BDF8"
-                               Margin="0,16,0,8"/>
+                        <Button x:Name="AdminButton" 
+            Content="Управление графиком" 
+            Padding="10,5"
+            Visibility="Collapsed"
+            Click="AdminButton_Click"
+            Style="{StaticResource PrimaryButtonStyle}">
+                            <Button.ToolTip>
+                                <ToolTip Content="Панель управления графиком сотрудников (доступно только администраторам)"/>
+                            </Button.ToolTip>
+                        </Button>
 
-                        <TextBlock Name="StatusTextBlock" 
-                               Text="{Binding Status, StringFormat='Статус задачи: {0}'}" 
-                               FontSize="14"
-                               FontFamily="Segoe UI"
-                               Foreground="#94A3B8"
-                               Margin="0,0,0,8"/>
-
-                        <TextBlock x:Name="TimeWorkedTextBlock" 
-                               FontSize="14"
-                               FontFamily="Segoe UI"
-                               Foreground="#94A3B8"/>
-                    </StackPanel>
+                        <Button Grid.Column="1" Click="MarkButton_Click"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Width="180">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <materialDesign:PackIcon Kind="ClockCheckOutline" Style="{StaticResource IconStyle}"/>
+                                <TextBlock Text="Отметиться" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
                 </Border>
 
-                <!-- Строка поиска -->
-                <TextBox Grid.Row="1" 
-                        Margin="16 0 16 16"
-                        Foreground="#E2E8F0"
-                        FontSize="14"
-                        BorderBrush="#334155"
-                        CaretBrush="#38BDF8"
-                        Width="300"
-                        HorizontalAlignment="Left"
-                        materialDesign:HintAssist.Hint="Поиск по табелю..."
-                        materialDesign:HintAssist.Foreground="#64748B"
-                        materialDesign:TextFieldAssist.HasClearButton="True"
-                        Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}">
-                    <TextBox.Template>
-                        <ControlTemplate TargetType="TextBox">
-                            <Border CornerRadius="8"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    Background="Transparent">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <materialDesign:PackIcon Kind="Magnify" 
-                                                           Width="20"
-                                                           Height="20"
-                                                           Foreground="#64748B"
-                                                           Margin="8,0,0,0"
-                                                           VerticalAlignment="Center"/>
-                                    <ScrollViewer Grid.Column="1"
-                                                Margin="8 10"
-                                                VerticalAlignment="Center"
-                                                x:Name="PART_ContentHost"/>
-                                </Grid>
-                            </Border>
-                        </ControlTemplate>
-                    </TextBox.Template>
-                </TextBox>
+                <Border Grid.Row="1" Margin="16" CornerRadius="8" BorderThickness="1" BorderBrush="{StaticResource BorderColor}">
+                    <Grid>
+                        <Grid.OpacityMask>
+                            <VisualBrush Visual="{Binding ElementName=clipBorder}"/>
+                        </Grid.OpacityMask>
+                        <Border x:Name="clipBorder" CornerRadius="8" Background="{StaticResource SecondaryColor}"/>
+                        <DataGrid x:Name="timesheetDataGrid"
+                                  Style="{StaticResource ModernDataGridStyle}"
+                                  ItemsSource="{Binding Timesheets}"
+                                  ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeaderStyle}"
+                                  RowStyle="{StaticResource ModernDataGridRowStyle}"
+                                  CellStyle="{StaticResource ModernDataGridCellStyle}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="День" Binding="{Binding Day}" Width="140">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <materialDesign:PackIcon Kind="CalendarToday" Style="{StaticResource AccentIconStyle}" Margin="0,0,8,0"/>
+                                                <TextBlock Text="{Binding}" VerticalAlignment="Center" Style="{StaticResource SecondaryTextStyle}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="Foreground" Value="{StaticResource AccentColor}"/>
+                                            <Setter Property="TextAlignment" Value="Left"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
 
-                <!-- Таблица Timesheet с увеличенными ячейками -->
-                <Border Grid.Row="2" 
-                        Margin="16 0 16 16"
-                        BorderBrush="{StaticResource GridLineBrush}"
-                        BorderThickness="1"
-                        CornerRadius="4"
-                        Background="#1E293B">
-                    <DataGrid Name="timesheetDataGrid"
-                          ItemsSource="{Binding Timesheets}"
-                          Style="{StaticResource InstantSelectionDataGridStyle}"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          CanUserDeleteRows="False"
-                          IsReadOnly="True"
-                          GridLinesVisibility="None"
-                          BorderThickness="0"
-                          Foreground="#E2E8F0"
-                          RowHeight="56"
-                          FontSize="14"
-                          FontFamily="Segoe UI"
-                          AlternationCount="2"
-                          SelectionMode="Single"
-                          EnableRowVirtualization="True">
+                                <DataGridTextColumn Header="Январь" Binding="{Binding January}" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+                                            <Setter Property="TextAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
 
-                        <!-- Заголовки колонок -->
-                        <DataGrid.ColumnHeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource ModernColumnHeaderStyle}">
-                                <Setter Property="Background" Value="Transparent"/>
-                                <Setter Property="BorderBrush" Value="Transparent"/>
-                            </Style>
-                        </DataGrid.ColumnHeaderStyle>
+                                <DataGridTextColumn Header="Февраль" Binding="{Binding February}" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+                                            <Setter Property="TextAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
 
-                        <!-- Стиль ячеек с увеличенными отступами -->
-                        <DataGrid.CellStyle>
-                            <Style TargetType="DataGridCell">
-                                <Setter Property="Padding" Value="0"/>
-                                <Setter Property="Background" Value="Transparent"/>
-                                <Setter Property="Foreground" Value="#E2E8F0"/>
-                                <Setter Property="TextBlock.TextAlignment" Value="Left"/>
-                                <Setter Property="HorizontalAlignment" Value="Stretch"/>
-                                <Setter Property="VerticalAlignment" Value="Center"/>
-                                <Setter Property="FontSize" Value="14"/>
-                                <Setter Property="FontFamily" Value="Segoe UI"/>
-                                <Setter Property="BorderBrush" Value="{StaticResource GridLineBrush}"/>
-                                <Setter Property="BorderThickness" Value="0 0 1 0"/>
-                                <Setter Property="Focusable" Value="False"/>
-                                <Setter Property="IsHitTestVisible" Value="False"/>
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="DataGridCell">
-                                            <Border Background="{TemplateBinding Background}"
-                                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                                    BorderThickness="{TemplateBinding BorderThickness}">
-                                                <ContentPresenter VerticalAlignment="Center"
-                                                              HorizontalAlignment="Stretch"
-                                                              Margin="8,0,8,0"/>
-                                            </Border>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                                <Style.Triggers>
-                                    <Trigger Property="IsSelected" Value="True">
-                                        <Setter Property="Background" Value="Transparent"/>
-                                        <Setter Property="Foreground" Value="#E2E8F0"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </DataGrid.CellStyle>
+                                <DataGridTextColumn Header="Март" Binding="{Binding March}" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+                                            <Setter Property="TextAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
 
-                        <!-- Колонки таблицы с увеличенными размерами -->
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="День" Binding="{Binding Day}" Width="140">
-                                <DataGridTextColumn.HeaderTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <materialDesign:PackIcon Kind="CalendarToday" 
-                                                                   Width="16"
-                                                                   Height="16"
-                                                                   Foreground="#38BDF8"
-                                                                   VerticalAlignment="Center"
-                                                                   Margin="0,0,8,0"/>
-                                            <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGridTextColumn.HeaderTemplate>
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource DynamicCellTextStyle}">
-                                        <Setter Property="FontWeight" Value="SemiBold"/>
-                                        <Setter Property="Foreground" Value="#38BDF8"/>
-                                        <Setter Property="Margin" Value="8,0,8,0"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
+                                <DataGridTextColumn Header="Апрель" Binding="{Binding April}" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+                                            <Setter Property="TextAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
 
-                            <!-- Месяцы с увеличенной шириной -->
-                            <DataGridTextColumn Header="Январь" Binding="{Binding January}" Width="160">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource DynamicCellTextStyle}">
-                                        <Setter Property="TextAlignment" Value="Center"/>
-                                        <Setter Property="Margin" Value="8,0,8,0"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
+                                <DataGridTextColumn Header="Май" Binding="{Binding May}" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+                                            <Setter Property="TextAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
 
-                            <DataGridTextColumn Header="Февраль" Binding="{Binding February}" Width="160">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource DynamicCellTextStyle}">
-                                        <Setter Property="TextAlignment" Value="Center"/>
-                                        <Setter Property="Margin" Value="8,0,8,0"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
+                                <DataGridTextColumn Header="Июнь" Binding="{Binding June}" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+                                            <Setter Property="TextAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
 
-                            <DataGridTextColumn Header="Март" Binding="{Binding March}" Width="160">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource DynamicCellTextStyle}">
-                                        <Setter Property="TextAlignment" Value="Center"/>
-                                        <Setter Property="Margin" Value="8,0,8,0"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
+                                <DataGridTextColumn Header="Июль" Binding="{Binding July}" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+                                            <Setter Property="TextAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
 
-                            <DataGridTextColumn Header="Апрель" Binding="{Binding April}" Width="160">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource DynamicCellTextStyle}">
-                                        <Setter Property="TextAlignment" Value="Center"/>
-                                        <Setter Property="Margin" Value="8,0,8,0"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
+                                <DataGridTextColumn Header="Август" Binding="{Binding August}" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+                                            <Setter Property="TextAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
 
-                            <DataGridTextColumn Header="Май" Binding="{Binding May}" Width="160">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource DynamicCellTextStyle}">
-                                        <Setter Property="TextAlignment" Value="Center"/>
-                                        <Setter Property="Margin" Value="8,0,8,0"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
+                                <DataGridTextColumn Header="Сентябрь" Binding="{Binding September}" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+                                            <Setter Property="TextAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
 
-                            <DataGridTextColumn Header="Июнь" Binding="{Binding June}" Width="160">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource DynamicCellTextStyle}">
-                                        <Setter Property="TextAlignment" Value="Center"/>
-                                        <Setter Property="Margin" Value="8,0,8,0"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
+                                <DataGridTextColumn Header="Октябрь" Binding="{Binding October}" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+                                            <Setter Property="TextAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
 
-                            <DataGridTextColumn Header="Июль" Binding="{Binding July}" Width="160">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource DynamicCellTextStyle}">
-                                        <Setter Property="TextAlignment" Value="Center"/>
-                                        <Setter Property="Margin" Value="8,0,8,0"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
+                                <DataGridTextColumn Header="Ноябрь" Binding="{Binding November}" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+                                            <Setter Property="TextAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
 
-                            <DataGridTextColumn Header="Август" Binding="{Binding August}" Width="160">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource DynamicCellTextStyle}">
-                                        <Setter Property="TextAlignment" Value="Center"/>
-                                        <Setter Property="Margin" Value="8,0,8,0"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-
-                            <DataGridTextColumn Header="Сентябрь" Binding="{Binding September}" Width="160">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource DynamicCellTextStyle}">
-                                        <Setter Property="TextAlignment" Value="Center"/>
-                                        <Setter Property="Margin" Value="8,0,8,0"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-
-                            <DataGridTextColumn Header="Октябрь" Binding="{Binding October}" Width="160">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource DynamicCellTextStyle}">
-                                        <Setter Property="TextAlignment" Value="Center"/>
-                                        <Setter Property="Margin" Value="8,0,8,0"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-
-                            <DataGridTextColumn Header="Ноябрь" Binding="{Binding November}" Width="160">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource DynamicCellTextStyle}">
-                                        <Setter Property="TextAlignment" Value="Center"/>
-                                        <Setter Property="Margin" Value="8,0,8,0"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-
-                            <DataGridTextColumn Header="Декабрь" Binding="{Binding December}" Width="160">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource DynamicCellTextStyle}">
-                                        <Setter Property="TextAlignment" Value="Center"/>
-                                        <Setter Property="Margin" Value="8,0,8,0"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                                <DataGridTextColumn Header="Декабрь" Binding="{Binding December}" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+                                            <Setter Property="TextAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
                 </Border>
             </Grid>
         </Border>

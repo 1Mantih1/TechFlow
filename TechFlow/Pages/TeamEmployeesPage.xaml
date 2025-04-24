@@ -17,7 +17,6 @@
             <Setter Property="FontFamily" Value="Segoe UI Light"/>
         </Style>
 
-        <!-- Стиль кнопки как в TeamDetailsPage -->
         <Style x:Key="BackButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#1E293B"/>
             <Setter Property="Foreground" Value="#94A3B8"/>
@@ -103,7 +102,6 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- Шапка с кнопкой -->
                 <Border Grid.Row="0" Background="#334155" CornerRadius="8" Margin="16" Padding="16">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -112,7 +110,6 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Кнопка в стиле TeamDetailsPage -->
                         <Button x:Name="ButtonBack" 
                                 Grid.Column="0"
                                 Style="{StaticResource BackButtonStyle}"
@@ -149,7 +146,6 @@
                     </Grid>
                 </Border>
 
-                <!-- Список сотрудников -->
                 <Border Grid.Row="1" Margin="16" Background="#1E293B" CornerRadius="8">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0">
                         <ItemsControl ItemsSource="{Binding TeamEmployees}" Margin="8">
@@ -163,12 +159,10 @@
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <!-- Аватар -->
                                             <Border Style="{StaticResource AvatarBorder}">
                                                 <Image Source="{Binding ImagePath}" Stretch="UniformToFill"/>
                                             </Border>
 
-                                            <!-- Основная информация -->
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding EmployeeName}" 
                                                            Style="{StaticResource EmployeeName}"/>
@@ -176,7 +170,6 @@
                                                            Style="{StaticResource EmployeeRole}"/>
                                             </StackPanel>
 
-                                            <!-- Команда -->
                                             <TextBlock Grid.Column="2" 
                                                        Text="{Binding TeamName}" 
                                                        Style="{StaticResource EmployeeTeam}"

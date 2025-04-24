@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using TechFlow.Windows;
 
 namespace TechFlow.Pages
 {
@@ -25,11 +26,12 @@ namespace TechFlow.Pages
             InitializeComponent();
         }
 
-        private void ButtonBack_Click(object sender, RoutedEventArgs e)
+        private async void ButtonBack_Click(object sender, RoutedEventArgs e)
         {
-            if (NavigationService.CanGoBack)
+            var mainWindow = Window.GetWindow(this) as ProjectManagement;
+            if (mainWindow != null)
             {
-                NavigationService.GoBack();
+                await mainWindow.GoBack();
             }
         }
     }

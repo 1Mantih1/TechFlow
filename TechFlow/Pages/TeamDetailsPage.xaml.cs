@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Navigation;
 using TechFlow.Classes;
 using TechFlow.Models;
+using TechFlow.Windows;
 
 namespace TechFlow.Pages
 {
@@ -24,17 +25,18 @@ namespace TechFlow.Pages
             DataContext = selectedTeam;
         }
 
-        private void ButtonBack_Click(object sender, RoutedEventArgs e)
+        private async void ButtonBack_Click(object sender, RoutedEventArgs e)
         {
-            if (NavigationService.CanGoBack)
+            var mainWindow = Window.GetWindow(this) as ProjectManagement;
+            if (mainWindow != null)
             {
-                NavigationService.GoBack();
+                await mainWindow.GoBack();
             }
         }
 
         private void ButtonTeamMembers_Click(object sender, RoutedEventArgs e)
         {
-            NavigationService.Navigate(new TeamEmployeesPage(selectedTeam.TeamName));
+            NavigationService.Navigate(new TeamEmployeesPage(selectedTeam.TeamId));
         }
 
     }

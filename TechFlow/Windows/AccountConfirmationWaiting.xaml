@@ -5,12 +5,74 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TechFlow.Pages"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        mc:Ignorable="d"
-        Title="Ожидание подтверждения" Height="600" Width="800"
-        WindowStyle="None" ResizeMode="NoResize"
-        Background="#1b2339" WindowStartupLocation="CenterScreen">
+        mc:Ignorable="d" Background="#1b2339"
+        Height="800" Width="1000" 
+        MinHeight="600" MinWidth="900"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        TextOptions.TextRenderingMode="ClearType"
+        SizeChanged="Window_SizeChanged">
+
+    <Window.Clip>
+        <RectangleGeometry Rect="0,0,1000,800" RadiusX="12" RadiusY="12"/>
+    </Window.Clip>
 
     <Window.Resources>
+
+        <Color x:Key="TextColor">#E0E0E0</Color>
+        <Color x:Key="LightTextColor">#FFFFFF</Color>
+        <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
+        <SolidColorBrush x:Key="LightTextBrush" Color="{StaticResource LightTextColor}"/>
+
+        <SolidColorBrush x:Key="WindowHeaderBrush" Color="#252C43"/>
+        <SolidColorBrush x:Key="WindowButtonHoverBrush" Color="#3a4a6b"/>
+        <SolidColorBrush x:Key="WindowButtonPressedBrush" Color="#5fc4b8"/>
+
+        <Style x:Key="WindowHeaderStyle" TargetType="Grid">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Background" Value="{StaticResource WindowHeaderBrush}"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+        </Style>
+
+        <Style x:Key="WindowTitleStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="15,0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style x:Key="WindowButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{StaticResource WindowButtonHoverBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="{StaticResource WindowButtonPressedBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
         <DropShadowEffect x:Key="DropShadowEffect" ShadowDepth="0" BlurRadius="10" Color="Black" Opacity="0.3"/>
 
         <Style x:Key="GradientButtonStyle" TargetType="Button">
@@ -76,9 +138,35 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
+        <Border x:Name="MainBorder" CornerRadius="16"
+                BorderThickness="1" BorderBrush="#3a4a6b" Margin="8">
+        </Border>
 
-        <!-- Header -->
-        <Border Grid.Row="0" Background="#222a40" Padding="20" 
+        <Grid Grid.Row="0"  Style="{StaticResource WindowHeaderStyle}"  Panel.ZIndex="1"
+   MouseLeftButtonDown="WindowHeader_MouseLeftButtonDown" Background="#222a40">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0" 
+            Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
+            Style="{StaticResource WindowTitleStyle}"/>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Style="{StaticResource WindowButtonStyle}" Click="MinimizeButton_Click">
+                    <materialDesign:PackIcon Kind="WindowMinimize" Width="16" Height="16"/>
+                </Button>
+                <Button Style="{StaticResource WindowButtonStyle}" Click="MaximizeButton_Click">
+                    <materialDesign:PackIcon Kind="WindowMaximize" Width="16" Height="16"/>
+                </Button>
+                <Button Style="{StaticResource WindowButtonStyle}" Click="CloseButton_Click">
+                    <materialDesign:PackIcon Kind="WindowClose" Width="16" Height="16"/>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="0" Background="#222a40" Padding="20" Margin="0,25,0,0" 
                 Effect="{StaticResource DropShadowEffect}">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <materialDesign:PackIcon Kind="ShieldAccount" 
@@ -93,7 +181,6 @@
             </StackPanel>
         </Border>
 
-        <!-- Main Content -->
         <Grid Grid.Row="1" Background="#222a40" Margin="40">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
@@ -138,7 +225,6 @@
             </StackPanel>
         </Grid>
 
-        <!-- Footer -->
         <Border Grid.Row="2" Background="#1b2339" Padding="15">
             <Button x:Name="LogoutButton"
                     Content="ВЫЙТИ ИЗ СИСТЕМЫ" 
