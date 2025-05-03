@@ -18,17 +18,7 @@ namespace TechFlow.Models
                 {
                     connection.Open();
 
-                    string sql = @"
-                        SELECT te.team_employee_id, te.employee_role_id, te.team_id, te.employee_id, 
-                               er.employee_role_name, t.team_name, 
-                               e.first_name || ' ' || e.last_name AS employee_name,
-                               e.image_path
-                        FROM team_employee te
-                        JOIN employee_role er ON te.employee_role_id = er.employee_role_id
-                        JOIN team t ON te.team_id = t.team_id
-                        JOIN employee e ON te.employee_id = e.employee_id
-                        WHERE te.team_id = @teamId
-                        ORDER BY employee_name";
+                    string sql = "SELECT * FROM fn_get_team_members(@teamId)";
 
                     using (var cmd = new NpgsqlCommand(sql, connection))
                     {
@@ -70,8 +60,9 @@ namespace TechFlow.Models
                     connection.Open();
 
                     string sql = @"
-                        INSERT INTO team_employee (employee_role_id, team_id, employee_id)
-                        VALUES (@roleId, @teamId, @employeeId)";
+                INSERT INTO team_employee (employee_role_id, team_id, employee_id)
+                VALUES (@roleId, @teamId, @employeeId)
+                RETURNING team_employee_id";
 
                     using (var cmd = new NpgsqlCommand(sql, connection))
                     {
@@ -79,13 +70,14 @@ namespace TechFlow.Models
                         cmd.Parameters.AddWithValue("@teamId", teamId);
                         cmd.Parameters.AddWithValue("@employeeId", employeeId);
 
-                        return cmd.ExecuteNonQuery() > 0;
+                        var result = cmd.ExecuteScalar();
+                        return result != null && result != DBNull.Value;
                     }
                 }
             }
             catch (NpgsqlException ex)
             {
-                MessageBox.Show($"Ошибка добавления сотрудника в команду: {ex.Message}");
+                MessageBox.Show($"Ошибка добавления сотрудника в команду: {ex.Message}\nПодробности: {ex.InnerException?.Message}");
                 return false;
             }
         }
@@ -98,17 +90,14 @@ namespace TechFlow.Models
                 {
                     connection.Open();
 
-                    string sql = @"
-                        SELECT COUNT(*) 
-                        FROM team_employee 
-                        WHERE employee_id = @employeeId AND team_id = @teamId";
+                    string sql = "SELECT fn_is_employee_in_team(@employeeId, @teamId)";
 
                     using (var cmd = new NpgsqlCommand(sql, connection))
                     {
                         cmd.Parameters.AddWithValue("@employeeId", employeeId);
                         cmd.Parameters.AddWithValue("@teamId", teamId);
 
-                        return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+                        return (bool)cmd.ExecuteScalar();
                     }
                 }
             }
@@ -118,6 +107,139 @@ namespace TechFlow.Models
                 return false;
             }
         }
+
+        public bool RemoveTeamMember(int teamEmployeeId)
+        {
+            try
+            {
+                using (var connection = new NpgsqlConnection(DbConnection.connectionStr))
+                {
+                    connection.Open();
+
+                    string sql = "SELECT fn_remove_team_member(@teamEmployeeId)";
+
+                    using (var cmd = new NpgsqlCommand(sql, connection))
+                    {
+                        cmd.Parameters.AddWithValue("@teamEmployeeId", teamEmployeeId);
+
+                        return (bool)cmd.ExecuteScalar();
+                    }
+                }
+            }
+            catch (NpgsqlException ex)
+            {
+                MessageBox.Show($"Ошибка удаления участника из команды: {ex.Message}");
+                return false;
+            }
+        }
+
+        public bool UpdateTeamMemberRole(int employeeId, int teamId, int newRoleId)
+        {
+            Console.WriteLine($"UpdateTeamMemberRole called with: employeeId={employeeId}, teamId={teamId}, newRoleId={newRoleId}");
+
+            try
+            {
+                using (var connection = new NpgsqlConnection(DbConnection.connectionStr))
+                {
+                    connection.Open();
+
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        try
+                        {
+                            // 1. Проверяем существование записи
+                            string checkSql = @"
+                        SELECT team_employee_id, employee_role_id 
+                        FROM team_employee 
+                        WHERE team_id = @teamId AND employee_id = @employeeId
+                        FOR UPDATE";
+
+                            int currentRoleId = -1;
+                            int teamEmployeeId = -1;
+
+                            using (var checkCmd = new NpgsqlCommand(checkSql, connection, transaction))
+                            {
+                                checkCmd.Parameters.AddWithValue("@teamId", teamId);
+                                checkCmd.Parameters.AddWithValue("@employeeId", employeeId);
+
+                                using (var reader = checkCmd.ExecuteReader())
+                                {
+                                    if (!reader.Read())
+                                    {
+                                        MessageBox.Show("Сотрудник не найден в указанной команде", "Ошибка");
+                                        return false;
+                                    }
+
+                                    teamEmployeeId = reader.GetInt32(0);
+                                    currentRoleId = reader.GetInt32(1);
+                                }
+                            }
+
+                            Console.WriteLine($"Current role: {currentRoleId}, TeamEmployeeId: {teamEmployeeId}");
+
+                            // 2. Если роль не меняется — возвращаемся
+                            if (currentRoleId == newRoleId)
+                            {
+                                MessageBox.Show("Сотрудник уже имеет указанную роль", "Информация");
+                                return true;
+                            }
+
+                            // 3. Проверяем, существует ли новая роль
+                            string checkRoleSql = "SELECT 1 FROM employee_role WHERE employee_role_id = @newRoleId";
+                            using (var checkRoleCmd = new NpgsqlCommand(checkRoleSql, connection, transaction))
+                            {
+                                checkRoleCmd.Parameters.AddWithValue("@newRoleId", newRoleId);
+                                if (checkRoleCmd.ExecuteScalar() == null)
+                                {
+                                    MessageBox.Show("Указанная роль не существует", "Ошибка");
+                                    return false;
+                                }
+                            }
+
+                            // 4. Обновляем роль
+                            string updateSql = @"
+                        UPDATE team_employee 
+                        SET employee_role_id = @newRoleId 
+                        WHERE team_employee_id = @teamEmployeeId";
+
+                            using (var updateCmd = new NpgsqlCommand(updateSql, connection, transaction))
+                            {
+                                updateCmd.Parameters.AddWithValue("@newRoleId", newRoleId);
+                                updateCmd.Parameters.AddWithValue("@teamEmployeeId", teamEmployeeId);
+
+                                int rowsAffected = updateCmd.ExecuteNonQuery();
+                                if (rowsAffected == 0)
+                                {
+                                    MessageBox.Show("Не удалось обновить роль", "Ошибка");
+                                    transaction.Rollback();
+                                    return false;
+                                }
+                            }
+
+                            transaction.Commit();
+                            Console.WriteLine("Роль успешно обновлена");
+                            return true;
+                        }
+                        catch (Exception ex)
+                        {
+                            transaction.Rollback();
+                            Console.WriteLine($"Ошибка в транзакции: {ex.Message}\n{ex.StackTrace}");
+                            throw;
+                        }
+                    }
+                }
+            }
+            catch (PostgresException pgEx)
+            {
+                Console.WriteLine($"Postgres ошибка: {pgEx.MessageText}");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка обновления роли: {ex.Message}", "Ошибка");
+                Console.WriteLine($"Общая ошибка: {ex.Message}\n{ex.StackTrace}");
+                return false;
+            }
+        }
     }
 }
-

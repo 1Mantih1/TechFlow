@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using TechFlow.Classes;
 using TechFlow.Models;
+using TechFlow.Windows;
 
 namespace TechFlow.Pages
 {
@@ -132,7 +133,7 @@ namespace TechFlow.Pages
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки команд: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка загрузки команд: {ex.Message}");
             }
         }
 
@@ -151,7 +152,7 @@ namespace TechFlow.Pages
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка поиска: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка поиска: {ex.Message}");
             }
         }
 

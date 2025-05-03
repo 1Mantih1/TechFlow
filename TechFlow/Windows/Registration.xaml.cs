@@ -234,7 +234,7 @@ namespace TechFlow.Windows
                         LastNameField.Text,
                         EmailField.Text,
                         tempPassword,
-                        null, null, null, -1);
+                        null, null, null, 34);
 
                     if (employeeId > 0 && userFromDb.SetEmployeeRole(employeeId))
                     {

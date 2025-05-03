@@ -18,9 +18,6 @@ using TechFlow.Models;
 
 namespace TechFlow.Pages
 {
-    /// <summary>
-    /// Логика взаимодействия для TeamEmployeesPage.xaml
-    /// </summary>
     public partial class TeamEmployeesPage : Page
     {
         public ObservableCollection<TeamEmployee> TeamEmployees { get; set; }

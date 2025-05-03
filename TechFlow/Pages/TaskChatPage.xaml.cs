@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.Win32;
+using Npgsql;
 using TechFlow.Classes;
 using TechFlow.Models;
 using TechFlow.Windows;
@@ -19,6 +20,7 @@ namespace TechFlow.Pages
         private int TaskId { get; set; }
         private DiscussionFromDb discussionDb = new DiscussionFromDb();
         private FileFromDb fileDb = new FileFromDb();
+        private int _discussionId = -1;
 
         public TaskChatPage(int taskId)
         {
@@ -29,7 +31,16 @@ namespace TechFlow.Pages
 
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
+            _discussionId = discussionDb.GetDiscussionIdByTaskId(TaskId);
+
+            if (_discussionId == -1)
+            {
+                CustomMessageBox.Show("Обсуждение для этой задачи не найдено");
+                return;
+            }
+
             LoadChatItems();
+
         }
 
         private void UpdateParticipantsCount()
@@ -40,10 +51,11 @@ namespace TechFlow.Pages
 
         private void LoadChatItems()
         {
-            var chatItems = new List<ChatItem>();
+            if (_discussionId == -1) return;
 
-            // Загружаем комментарии
-            var comments = discussionDb.LoadComments(TaskId);
+            var chatItems = new List<ChatItem>();
+ 
+            var comments = discussionDb.LoadComments(_discussionId);
             foreach (var comment in comments)
             {
                 chatItems.Add(new ChatItem
@@ -60,7 +72,6 @@ namespace TechFlow.Pages
                 });
             }
 
-            // Загружаем файлы
             var files = fileDb.LoadFiles(TaskId);
             foreach (var file in files)
             {
@@ -78,30 +89,88 @@ namespace TechFlow.Pages
                 });
             }
 
-            // Сортируем по дате создания (от старых к новым)
             chatItems = chatItems.OrderBy(item => item.CreationDate).ToList();
 
             ChatItemsList.ItemsSource = chatItems;
             UpdateLastMessageTime();
-            UpdateParticipantsCount(); // Добавлен вызов обновления счетчика участников
+            UpdateParticipantsCount(); 
         }
 
         private void AddCommentButton_Click(object sender, RoutedEventArgs e)
         {
-            string commentText = CommentTextBox.Text;
-
-            if (string.IsNullOrWhiteSpace(commentText))
+            if (_discussionId <= 0)
             {
-                CustomMessageBox.Show("Введите текст комментария!");
+                // Попробуем создать обсуждение, если его нет
+                _discussionId = CreateDiscussionForTask();
+                if (_discussionId <= 0)
+                {
+                    CustomMessageBox.Show("Не удалось создать обсуждение для задачи");
+                    return;
+                }
+            }
+
+            string commentText = CommentTextBox.Text.Trim();
+            if (string.IsNullOrEmpty(commentText))
+            {
+                CustomMessageBox.Show("Введите текст комментария");
                 return;
             }
 
-            discussionDb.AddComment(commentText, TaskId, Authorization.currentUser.UserId);
-            MessageBox.Show("Комментарий добавлен!");
+            if (discussionDb.AddComment(commentText, _discussionId, Authorization.currentUser.UserId))
+            {
+                CommentTextBox.Text = string.Empty;
+                LoadChatItems();
+            }
+        }
 
-            LoadChatItems();
-            CommentTextBox.Text = string.Empty;
-            UpdateLastMessageTime();
+        private int CreateDiscussionForTask()
+        {
+            using (var connection = new NpgsqlConnection(DbConnection.connectionStr))
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        // Получаем название задачи для имени обсуждения
+                        var taskTitle = GetTaskTitle(TaskId, connection, transaction);
+
+                        var cmd = new NpgsqlCommand(
+                            @"INSERT INTO discussion 
+                    (discussion_name, creation_date, task_id) 
+                    VALUES (@name, CURRENT_TIMESTAMP, @task_id)
+                    RETURNING discussion_id;",
+                            connection, transaction);
+
+                        cmd.Parameters.AddWithValue("@name", $"Обсуждение задачи: {taskTitle}");
+                        cmd.Parameters.AddWithValue("@task_id", TaskId);
+
+                        var newDiscussionId = cmd.ExecuteScalar();
+                        if (newDiscussionId == null)
+                        {
+                            transaction.Rollback();
+                            return -1;
+                        }
+
+                        transaction.Commit();
+                        return Convert.ToInt32(newDiscussionId);
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        return -1;
+                    }
+                }
+            }
+        }
+
+        private string GetTaskTitle(int taskId, NpgsqlConnection connection, NpgsqlTransaction transaction)
+        {
+            var cmd = new NpgsqlCommand(
+                "SELECT task_name FROM task WHERE task_id = @task_id",
+                connection, transaction);
+            cmd.Parameters.AddWithValue("@task_id", taskId);
+            return cmd.ExecuteScalar()?.ToString() ?? "Без названия";
         }
 
         private void AddTaskFileButton_Click(object sender, RoutedEventArgs e)
@@ -117,13 +186,13 @@ namespace TechFlow.Pages
                 try
                 {
                     fileDb.AddFile(TaskId, Authorization.currentUser.UserId, openFileDialog.FileName);
-                    MessageBox.Show("Файл успешно прикреплен!");
+                    CustomMessageBox.Show("Файл успешно прикреплен!");
                     LoadChatItems();
                     UpdateLastMessageTime();
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Ошибка при прикреплении файла: {ex.Message}");
+                    CustomMessageBox.Show($"Ошибка при прикреплении файла: {ex.Message}");
                 }
             }
         }

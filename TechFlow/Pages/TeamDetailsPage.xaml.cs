@@ -12,9 +12,6 @@ using TechFlow.Windows;
 
 namespace TechFlow.Pages
 {
-    /// <summary>
-    /// Логика взаимодействия для TeamDetailsPage.xaml
-    /// </summary>
     public partial class TeamDetailsPage : Page
     {
         private Team selectedTeam;

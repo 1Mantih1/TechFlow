@@ -1,6 +1,7 @@
 ﻿using Npgsql;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Windows;
 using TechFlow.Classes;
@@ -32,18 +33,17 @@ namespace TechFlow.Models
                 using (var connection = new NpgsqlConnection(DbConnection.connectionStr))
                 {
                     connection.Open();
-                    var sqlExp = @"INSERT INTO task_file 
-                                (file_name, file_path, file_size, file_type, task_id, employee_id) 
-                                VALUES (@name, @path, @size, @type, @taskId, @employeeId)";
+                    var sqlExp = @"CALL public.insert_task_file(@p_file_name, @p_file_path, @p_file_size, @p_file_type, @p_task_id, @p_employee_id)";
 
                     using (var command = new NpgsqlCommand(sqlExp, connection))
                     {
-                        command.Parameters.AddWithValue("@name", fileInfo.Name);
-                        command.Parameters.AddWithValue("@path", destinationPath);
-                        command.Parameters.AddWithValue("@size", fileInfo.Length);
-                        command.Parameters.AddWithValue("@type", fileInfo.Extension);
-                        command.Parameters.AddWithValue("@taskId", taskId);
-                        command.Parameters.AddWithValue("@employeeId", employeeId);
+                        command.CommandType = CommandType.Text;
+                        command.Parameters.AddWithValue("@p_file_name", fileInfo.Name);
+                        command.Parameters.AddWithValue("@p_file_path", destinationPath);
+                        command.Parameters.AddWithValue("@p_file_size", fileInfo.Length);
+                        command.Parameters.AddWithValue("@p_file_type", fileInfo.Extension);
+                        command.Parameters.AddWithValue("@p_task_id", taskId);
+                        command.Parameters.AddWithValue("@p_employee_id", employeeId);
 
                         command.ExecuteNonQuery();
                     }
@@ -64,25 +64,26 @@ namespace TechFlow.Models
                 try
                 {
                     connection.Open();
-                    var sqlExp = @"SELECT * FROM task_file WHERE task_id = @taskId ORDER BY creation_date DESC";
+                    var sqlExp = @"SELECT * FROM public.get_task_files_by_task_id_v2(@p_task_id)";
 
                     using (var command = new NpgsqlCommand(sqlExp, connection))
                     {
-                        command.Parameters.AddWithValue("@taskId", taskId);
+                        command.CommandType = CommandType.Text;
+                        command.Parameters.AddWithValue("@p_task_id", taskId);
 
                         using (var reader = command.ExecuteReader())
                         {
                             while (reader.Read())
                             {
                                 files.Add(new TaskFile(
-                                    Convert.ToInt32(reader["file_id"]),
-                                    reader["file_name"].ToString(),
-                                    reader["file_path"].ToString(),
-                                    Convert.ToInt64(reader["file_size"]),
-                                    reader["file_type"].ToString(),
-                                    Convert.ToDateTime(reader["creation_date"]),
-                                    Convert.ToInt32(reader["task_id"]),
-                                    Convert.ToInt32(reader["employee_id"])
+                                    reader.GetInt32(reader.GetOrdinal("out_file_id")),
+                                    reader.GetString(reader.GetOrdinal("out_file_name")),
+                                    reader.GetString(reader.GetOrdinal("out_file_path")),
+                                    reader.GetInt64(reader.GetOrdinal("out_file_size")),
+                                    reader.GetString(reader.GetOrdinal("out_file_type")),
+                                    reader.GetDateTime(reader.GetOrdinal("out_creation_date")),
+                                    reader.GetInt32(reader.GetOrdinal("out_task_id")),
+                                    reader.GetInt32(reader.GetOrdinal("out_employee_id"))
                                 ));
                             }
                         }

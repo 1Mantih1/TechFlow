@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -35,7 +34,7 @@ namespace TechFlow.Pages
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при загрузке страницы: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка при загрузке страницы: {ex.Message}");
             }
         }
 
@@ -43,13 +42,14 @@ namespace TechFlow.Pages
         {
             try
             {
-                AdminButton.Visibility = _timesheetDb.IsAdmin(Authorization.currentUser.UserId)
+                UserFromDb db = new UserFromDb();   
+                AdminButton.Visibility = db.IsAdmin(Authorization.currentUser.UserId)
                     ? Visibility.Visible
                     : Visibility.Collapsed;
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка проверки прав администратора: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка проверки прав администратора: {ex.Message}");
             }
         }
 
@@ -87,7 +87,7 @@ namespace TechFlow.Pages
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при загрузке табеля: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка при загрузке табеля: {ex.Message}");
             }
         }
 
@@ -96,30 +96,25 @@ namespace TechFlow.Pages
             try
             {
                 var todayRecord = _allTimesheets.FirstOrDefault(t => t.WorkDate.Date == DateTime.Today);
+                StatusTextBlock.Text = todayRecord?.Status?.Description ?? "Не определен";
 
-                if (todayRecord != null)
+                // Обновляем отображение рабочего времени
+                if (todayRecord != null &&
+                    todayRecord.Status?.Description == "На рабочем месте" &&
+                    todayRecord.StartTime != TimeSpan.Zero &&
+                    todayRecord.EndTime != TimeSpan.Zero)
                 {
-                    StatusTextBlock.Text = todayRecord.Status?.Description ?? "Не определен";
-
-                    if (todayRecord.Status?.Description == "На рабочем месте")
-                    {
-                        var startTime = _timesheetDb.GetCheckInTime(Authorization.currentUser.UserId, DateTime.Today);
-                        if (startTime != null)
-                        {
-                            var endTime = startTime.Value.AddHours(8);
-                            TimeWorkedTextBlock.Text = $"{startTime.Value:HH:mm} - {endTime:HH:mm}";
-                            TimeWorkedTextBlock.Visibility = Visibility.Visible;
-                            return;
-                        }
-                    }
+                    TimeWorkedTextBlock.Text = $"{todayRecord.StartTime:hh\\:mm} - {todayRecord.EndTime:hh\\:mm}";
+                    TimeWorkedTextBlock.Visibility = Visibility.Visible;
                 }
-
-                StatusTextBlock.Text = "Не определен";
-                TimeWorkedTextBlock.Visibility = Visibility.Collapsed;
+                else
+                {
+                    TimeWorkedTextBlock.Visibility = Visibility.Collapsed;
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка обновления статуса: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка обновления статуса: {ex.Message}");
             }
         }
 
@@ -136,7 +131,7 @@ namespace TechFlow.Pages
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка обновления информации пользователя: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка обновления информации пользователя: {ex.Message}");
             }
         }
 
@@ -149,76 +144,52 @@ namespace TechFlow.Pages
         {
             try
             {
-                var currentTime = DateTime.Now.TimeOfDay;
-                var startWindow = new TimeSpan(8, 0, 0); // 8:00
-                var endWindow = new TimeSpan(12, 0, 0); // 12:00
+                DateTime now = DateTime.Now;
+                TimeSpan currentTime = now.TimeOfDay;
+                TimeSpan startWindow = new TimeSpan(8, 0, 0); // 8:00
+                TimeSpan endWindow = new TimeSpan(12, 0, 0);  // 12:00
 
+                // Проверяем, что текущее время между 8:00 и 12:00 включительно
                 if (currentTime < startWindow || currentTime > endWindow)
                 {
-                    MessageBox.Show("Отметка возможна только с 8:00 до 12:00");
+                    CustomMessageBox.Show("Отметка возможна только с 8:00 до 12:00 включительно");
                     return;
                 }
 
                 var todayRecord = _allTimesheets.FirstOrDefault(t =>
-                    t.WorkDate.Date == DateTime.Today);
+                    t.WorkDate.Date == now.Date);
 
                 if (todayRecord != null && todayRecord.Status?.Description == "На рабочем месте")
                 {
-                    MessageBox.Show("Вы уже отметились сегодня.");
+                    CustomMessageBox.Show("Вы уже отметились сегодня.");
                     return;
                 }
 
-                _timesheetDb.UpdateStatus("На рабочем месте", DateTime.Now);
+                // Рассчитываем время окончания (начальное время + 8 часов)
+                TimeSpan startTime = currentTime;
+                TimeSpan endTime = startTime.Add(TimeSpan.FromHours(8));
 
-                // Обновляем UI
-                var start = DateTime.Now;
-                var end = start.AddHours(8);
+                // Проверяем, чтобы время окончания не было на следующий день
+                if (endTime.Days > 0)
+                {
+                    endTime = new TimeSpan(endTime.Hours, endTime.Minutes, endTime.Seconds);
+                }
+
+                // Сохраняем в базу
+                _timesheetDb.UpdateStatus("На рабочем месте", startTime, endTime);
 
                 StatusTextBlock.Text = "На рабочем месте";
-                TimeWorkedTextBlock.Text = $"{start:HH:mm} - {end:HH:mm}";
-                TimeWorkedTextBlock.Visibility = Visibility.Visible;
-
-                MessageBox.Show("Вы успешно отметились!");
+                CustomMessageBox.Show($"Вы успешно отметились!\nРабочее время сегодня: {startTime:hh\\:mm} - {endTime:hh\\:mm}");
                 LoadTimesheets();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при отметке: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка при отметке: {ex.Message}");
             }
         }
-
         private void AdminButton_Click(object sender, RoutedEventArgs e)
         {
-            // Здесь можно открыть окно для управления графиком сотрудников
-            //var adminWindow = new AdminTimesheetWindow();
-            //adminWindow.ShowDialog();
+            NavigationService?.Navigate(new AdminTimesheetPage());
         }
-    }
-
-    public class TimesheetDisplay
-    {
-        public string Day { get; set; } = "";
-        public string[] MonthStatuses { get; } = new string[12];
-
-        public void SetWorkType(int monthIndex, string workType)
-        {
-            if (monthIndex >= 0 && monthIndex < 12)
-            {
-                MonthStatuses[monthIndex] = workType ?? "";
-            }
-        }
-
-        public string January => MonthStatuses[0];
-        public string February => MonthStatuses[1];
-        public string March => MonthStatuses[2];
-        public string April => MonthStatuses[3];
-        public string May => MonthStatuses[4];
-        public string June => MonthStatuses[5];
-        public string July => MonthStatuses[6];
-        public string August => MonthStatuses[7];
-        public string September => MonthStatuses[8];
-        public string October => MonthStatuses[9];
-        public string November => MonthStatuses[10];
-        public string December => MonthStatuses[11];
     }
 }

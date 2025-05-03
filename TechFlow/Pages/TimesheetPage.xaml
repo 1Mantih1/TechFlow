@@ -264,6 +264,18 @@
                                Margin="12,0,0,0"/>
                 </StackPanel>
 
+                <Button x:Name="AdminButton"
+            Content="Управление графиком" 
+            Padding="10,5"
+Visibility="Collapsed"
+            HorizontalAlignment="Right"
+            Click="AdminButton_Click"
+            Style="{StaticResource PrimaryButtonStyle}">
+                    <Button.ToolTip>
+                        <ToolTip Content="Панель управления графиком сотрудников (доступно только администраторам)"/>
+                    </Button.ToolTip>
+                </Button>
+
                 <Button Grid.Column="1" Click="RefreshButton_Click"
                         Style="{StaticResource PrimaryButtonStyle}">
                     <StackPanel Orientation="Horizontal">
@@ -303,17 +315,6 @@
                                 <TextBlock x:Name="TimeWorkedTextBlock" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold"/>
                             </StackPanel>
                         </StackPanel>
-
-                        <Button x:Name="AdminButton" 
-            Content="Управление графиком" 
-            Padding="10,5"
-            Visibility="Collapsed"
-            Click="AdminButton_Click"
-            Style="{StaticResource PrimaryButtonStyle}">
-                            <Button.ToolTip>
-                                <ToolTip Content="Панель управления графиком сотрудников (доступно только администраторам)"/>
-                            </Button.ToolTip>
-                        </Button>
 
                         <Button Grid.Column="1" Click="MarkButton_Click"
                                 Style="{StaticResource PrimaryButtonStyle}"

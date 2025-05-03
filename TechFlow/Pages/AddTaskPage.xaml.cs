@@ -3,7 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Npgsql;
 using TechFlow.Models;
-using TechFlow.Classes;
+using TechFlow.Windows;
 
 namespace TechFlow.Pages
 {
@@ -42,7 +42,7 @@ namespace TechFlow.Pages
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки статусов: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка загрузки статусов: {ex.Message}");
             }
         }
 
@@ -70,7 +70,7 @@ namespace TechFlow.Pages
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки этапов: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка загрузки этапов: {ex.Message}");
             }
         }
 
@@ -98,7 +98,7 @@ namespace TechFlow.Pages
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки команд: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка загрузки команд: {ex.Message}");
             }
         }
 
@@ -106,31 +106,31 @@ namespace TechFlow.Pages
         {
             if (string.IsNullOrWhiteSpace(TaskNameField.Text))
             {
-                MessageBox.Show("Введите название задачи!");
+                CustomMessageBox.Show("Введите название задачи!");
                 return;
             }
 
             if (StatusComboBox.SelectedItem == null)
             {
-                MessageBox.Show("Выберите статус!");
+                CustomMessageBox.Show("Выберите статус!");
                 return;
             }
 
             if (StageComboBox.SelectedItem == null)
             {
-                MessageBox.Show("Выберите этап проекта!");
+                CustomMessageBox.Show("Выберите этап проекта!");
                 return;
             }
 
             if (TeamComboBox.SelectedItem == null)
             {
-                MessageBox.Show("Выберите команду!");
+                CustomMessageBox.Show("Выберите команду!");
                 return;
             }
 
             if (StartDateField.SelectedDate == null)
             {
-                MessageBox.Show("Выберите дату начала!");
+                CustomMessageBox.Show("Выберите дату начала!");
                 return;
             }
 
@@ -174,7 +174,7 @@ namespace TechFlow.Pages
                         int rowsAffected = command.ExecuteNonQuery();
                         if (rowsAffected > 0)
                         {
-                            MessageBox.Show("Задача успешно добавлена!");
+                            CustomMessageBox.Show("Задача успешно добавлена!");
                             ClearForm();
                         }
                     }
@@ -182,7 +182,7 @@ namespace TechFlow.Pages
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при добавлении задачи: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка при добавлении задачи: {ex.Message}");
             }
         }
 

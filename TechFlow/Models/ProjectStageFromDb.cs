@@ -1,6 +1,7 @@
 ﻿using Npgsql;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Windows;
 using TechFlow.Classes;
 using TechFlow.Windows;
@@ -9,6 +10,21 @@ namespace TechFlow.Models
 {
     class ProjectStageFromDb
     {
+        private bool IsCurrentUserAdmin(NpgsqlConnection connection)
+        {
+            int currentEmployeeId = Authorization.currentUser.UserId;
+
+            using (NpgsqlCommand adminCheckCmd = new NpgsqlCommand(
+                "SELECT er.employee_role_name FROM employee e " +
+                "JOIN employee_role er ON e.role_id = er.employee_role_id " +
+                "WHERE e.employee_id = @employeeId", connection))
+            {
+                adminCheckCmd.Parameters.AddWithValue("@employeeId", currentEmployeeId);
+                string roleName = adminCheckCmd.ExecuteScalar()?.ToString();
+                return roleName == "Администратор";
+            }
+        }
+
         public List<ProjectStage> LoadProjectStages()
         {
             List<ProjectStage> projectStages = new List<ProjectStage>();
@@ -19,34 +35,24 @@ namespace TechFlow.Models
                 try
                 {
                     connection.Open();
+                    bool isAdmin = IsCurrentUserAdmin(connection);
 
-                    bool isAdmin = false;
-                    string checkAdminSql = "SELECT er.employee_role_name FROM employee e " +
-                                           "JOIN employee_role er ON e.role_id = er.employee_role_id " +
-                                           "WHERE e.employee_id = @employeeId";
+                    string sql = @"
+                        SELECT ps.stage_id, ps.stage_name, ps.project_stage_description, 
+                               ps.start_date, ps.end_date, s.status_name, 
+                               p.project_id, p.project_name
+                        FROM project_stage ps
+                        JOIN status s ON ps.status_id = s.status_id
+                        JOIN project p ON ps.project_id = p.project_id";
 
-                    using (NpgsqlCommand adminCheckCmd = new NpgsqlCommand(checkAdminSql, connection))
+                    if (!isAdmin)
                     {
-                        adminCheckCmd.Parameters.AddWithValue("@employeeId", currentEmployeeId);
-                        string roleName = adminCheckCmd.ExecuteScalar()?.ToString();
-                        isAdmin = roleName == "Администратор";
+                        sql += @"
+                        JOIN task t ON t.stage_id = ps.stage_id
+                        JOIN team_employee te ON t.team_id = te.team_id AND te.employee_id = @employeeId";
                     }
 
-                    string sqlExp = @"
-                SELECT ps.stage_id, ps.stage_name, ps.project_stage_description, ps.start_date, ps.end_date, 
-                       ps.status_id, ps.project_id, s.status_name, p.project_name
-                FROM public.project_stage ps
-                JOIN public.status s ON ps.status_id = s.status_id
-                JOIN public.project p ON ps.project_id = p.project_id " +
-                        (isAdmin ? "" : @"WHERE ps.stage_id IN (
-                    SELECT DISTINCT t.stage_id 
-                    FROM task t
-                    JOIN team_employee te ON t.team_id = te.team_id
-                    WHERE te.employee_id = @employeeId
-                )") +
-                        " ORDER BY ps.stage_id;";
-
-                    using (NpgsqlCommand command = new NpgsqlCommand(sqlExp, connection))
+                    using (NpgsqlCommand command = new NpgsqlCommand(sql, connection))
                     {
                         if (!isAdmin)
                         {
@@ -58,14 +64,14 @@ namespace TechFlow.Models
                             while (reader.Read())
                             {
                                 projectStages.Add(new ProjectStage(
-                                    Convert.ToInt32(reader["stage_id"]),
-                                    reader["stage_name"].ToString(),
-                                    reader["project_stage_description"]?.ToString() ?? "",
-                                    Convert.ToDateTime(reader["start_date"]),
-                                    reader["end_date"] != DBNull.Value ? Convert.ToDateTime(reader["end_date"]) : (DateTime?)null,
-                                    reader["status_name"].ToString(),
-                                    Convert.ToInt32(reader["project_id"]),
-                                    reader["project_name"].ToString()
+                                    stageId: reader.GetInt32(reader.GetOrdinal("stage_id")),
+                                    stageName: reader.GetString(reader.GetOrdinal("stage_name")),
+                                    projectStageDescription: reader.IsDBNull(reader.GetOrdinal("project_stage_description")) ? "" : reader.GetString(reader.GetOrdinal("project_stage_description")),
+                                    startDate: reader.GetDateTime(reader.GetOrdinal("start_date")),
+                                    endDate: reader.IsDBNull(reader.GetOrdinal("end_date")) ? (DateTime?)null : reader.GetDateTime(reader.GetOrdinal("end_date")),
+                                    status: reader.GetString(reader.GetOrdinal("status_name")),
+                                    projectId: reader.GetInt32(reader.GetOrdinal("project_id")),
+                                    projectName: reader.GetString(reader.GetOrdinal("project_name"))
                                 ));
                             }
                         }
@@ -73,7 +79,10 @@ namespace TechFlow.Models
                 }
                 catch (NpgsqlException ex)
                 {
-                    MessageBox.Show("Ошибка загрузки стадий проекта: " + ex.Message);
+                    MessageBox.Show("Ошибка загрузки стадий проекта: " + ex.Message,
+                                  "Ошибка базы данных",
+                                  MessageBoxButton.OK,
+                                  MessageBoxImage.Error);
                 }
             }
             return projectStages;
@@ -82,24 +91,44 @@ namespace TechFlow.Models
         public List<ProjectStage> SearchProjectStages(string searchText)
         {
             List<ProjectStage> projectStages = new List<ProjectStage>();
+            int currentEmployeeId = Authorization.currentUser.UserId;
 
             using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
             {
                 try
                 {
                     connection.Open();
+                    bool isAdmin = IsCurrentUserAdmin(connection);
+
                     string sql = @"
-                SELECT ps.stage_id, ps.stage_name, ps.project_stage_description, ps.start_date, ps.end_date, 
-                       ps.status_id, ps.project_id, s.status_name, p.project_name
-                FROM public.project_stage ps
-                JOIN public.status s ON ps.status_id = s.status_id
-                JOIN public.project p ON ps.project_id = p.project_id
-                WHERE ps.stage_name ILIKE @search
-                ORDER BY ps.stage_id;";
+                        SELECT ps.stage_id, ps.stage_name, ps.project_stage_description, 
+                               ps.start_date, ps.end_date, s.status_name, 
+                               p.project_id, p.project_name
+                        FROM project_stage ps
+                        JOIN status s ON ps.status_id = s.status_id
+                        JOIN project p ON ps.project_id = p.project_id
+                        WHERE ps.stage_name ILIKE @search";
+
+                    if (!isAdmin)
+                    {
+                        sql += @"
+                        AND EXISTS (
+                            SELECT 1 FROM task t
+                            JOIN team_employee te ON t.team_id = te.team_id
+                            WHERE t.stage_id = ps.stage_id AND te.employee_id = @employeeId
+                        )";
+                    }
+
+                    sql += " ORDER BY ps.stage_id;";
 
                     using (NpgsqlCommand command = new NpgsqlCommand(sql, connection))
                     {
                         command.Parameters.AddWithValue("@search", $"%{searchText}%");
+
+                        if (!isAdmin)
+                        {
+                            command.Parameters.AddWithValue("@employeeId", currentEmployeeId);
+                        }
 
                         using (NpgsqlDataReader reader = command.ExecuteReader())
                         {
@@ -136,38 +165,56 @@ namespace TechFlow.Models
             string sortBy = "default")
         {
             List<ProjectStage> projectStages = new List<ProjectStage>();
+            int currentEmployeeId = Authorization.currentUser.UserId;
 
             using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
             {
                 try
                 {
                     connection.Open();
+                    bool isAdmin = IsCurrentUserAdmin(connection);
 
                     string sql = @"
-                SELECT ps.stage_id, ps.stage_name, ps.project_stage_description, ps.start_date, ps.end_date, 
-                       ps.status_id, ps.project_id, s.status_name, p.project_name
-                FROM public.project_stage ps
-                JOIN public.status s ON ps.status_id = s.status_id
-                JOIN public.project p ON ps.project_id = p.project_id";
+                        SELECT ps.stage_id, ps.stage_name, ps.project_stage_description, 
+                               ps.start_date, ps.end_date, s.status_name, 
+                               p.project_id, p.project_name
+                        FROM project_stage ps
+                        JOIN status s ON ps.status_id = s.status_id
+                        JOIN project p ON ps.project_id = p.project_id
+                        WHERE 1=1";
 
-                    var conditions = new List<string>();
+                    if (!isAdmin)
+                    {
+                        sql += @"
+                        AND EXISTS (
+                            SELECT 1 FROM task t
+                            JOIN team_employee te ON t.team_id = te.team_id
+                            WHERE t.stage_id = ps.stage_id AND te.employee_id = @employeeId
+                        )";
+                    }
+
                     var parameters = new List<NpgsqlParameter>();
+
+                    if (!isAdmin)
+                    {
+                        parameters.Add(new NpgsqlParameter("@employeeId", currentEmployeeId));
+                    }
 
                     if (!string.IsNullOrEmpty(searchText))
                     {
-                        conditions.Add("ps.stage_name ILIKE @search");
+                        sql += " AND ps.stage_name ILIKE @search";
                         parameters.Add(new NpgsqlParameter("@search", $"%{searchText}%"));
                     }
 
                     if (!string.IsNullOrEmpty(projectName))
                     {
-                        conditions.Add("p.project_name ILIKE @projectName");
+                        sql += " AND p.project_name ILIKE @projectName";
                         parameters.Add(new NpgsqlParameter("@projectName", $"%{projectName}%"));
                     }
 
                     if (!string.IsNullOrEmpty(status))
                     {
-                        conditions.Add("s.status_name = @status");
+                        sql += " AND s.status_name = @status";
                         parameters.Add(new NpgsqlParameter("@status", status));
                     }
 
@@ -176,30 +223,23 @@ namespace TechFlow.Models
                         switch (dateFilterOption)
                         {
                             case "Сегодня":
-                                conditions.Add("ps.start_date::date = CURRENT_DATE");
+                                sql += " AND ps.start_date::date = CURRENT_DATE";
                                 break;
                             case "На этой неделе":
-                                conditions.Add("ps.start_date >= date_trunc('week', CURRENT_DATE)");
+                                sql += " AND ps.start_date >= date_trunc('week', CURRENT_DATE)";
                                 break;
                             case "В этом месяце":
-                                conditions.Add("ps.start_date >= date_trunc('month', CURRENT_DATE)");
+                                sql += " AND ps.start_date >= date_trunc('month', CURRENT_DATE)";
                                 break;
                             case "Просроченные":
-                                conditions.Add("ps.end_date IS NOT NULL AND ps.end_date < CURRENT_DATE");
-                                break;
-                            default:
+                                sql += " AND ps.end_date IS NOT NULL AND ps.end_date < CURRENT_DATE";
                                 break;
                         }
                     }
 
                     if (isUrgent)
                     {
-                        conditions.Add("ps.end_date IS NOT NULL AND ps.end_date <= CURRENT_DATE + INTERVAL '3 days'");
-                    }
-
-                    if (conditions.Count > 0)
-                    {
-                        sql += " WHERE " + string.Join(" AND ", conditions);
+                        sql += " AND ps.end_date IS NOT NULL AND ps.end_date <= CURRENT_DATE + INTERVAL '3 days'";
                     }
 
                     switch (sortBy)
@@ -247,6 +287,276 @@ namespace TechFlow.Models
             }
 
             return projectStages;
+        }
+
+        public ProjectStage GetProjectStageById(int stageId)
+        {
+            int currentEmployeeId = Authorization.currentUser.UserId;
+
+            using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
+            {
+                try
+                {
+                    connection.Open();
+                    bool isAdmin = IsCurrentUserAdmin(connection);
+
+                    string sql = @"
+                        SELECT ps.stage_id, ps.stage_name, ps.project_stage_description, 
+                               ps.start_date, ps.end_date, s.status_name, 
+                               p.project_id, p.project_name
+                        FROM project_stage ps
+                        JOIN status s ON ps.status_id = s.status_id
+                        JOIN project p ON ps.project_id = p.project_id
+                        WHERE ps.stage_id = @stageId";
+
+                    if (!isAdmin)
+                    {
+                        sql += @"
+                            AND EXISTS (
+                                SELECT 1 FROM task t
+                                JOIN team_employee te ON t.team_id = te.team_id
+                                WHERE t.stage_id = ps.stage_id 
+                                AND te.employee_id = @employeeId
+                            )";
+                    }
+
+                    using (NpgsqlCommand command = new NpgsqlCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@stageId", stageId);
+
+                        if (!isAdmin)
+                        {
+                            command.Parameters.AddWithValue("@employeeId", currentEmployeeId);
+                        }
+
+                        using (NpgsqlDataReader reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                return new ProjectStage(
+                                    stageId: reader.GetInt32(reader.GetOrdinal("stage_id")),
+                                    stageName: reader.GetString(reader.GetOrdinal("stage_name")),
+                                    projectStageDescription: reader.IsDBNull(reader.GetOrdinal("project_stage_description")) ? "" : reader.GetString(reader.GetOrdinal("project_stage_description")),
+                                    startDate: reader.GetDateTime(reader.GetOrdinal("start_date")),
+                                    endDate: reader.IsDBNull(reader.GetOrdinal("end_date")) ? (DateTime?)null : reader.GetDateTime(reader.GetOrdinal("end_date")),
+                                    status: reader.GetString(reader.GetOrdinal("status_name")),
+                                    projectId: reader.GetInt32(reader.GetOrdinal("project_id")),
+                                    projectName: reader.GetString(reader.GetOrdinal("project_name"))
+                                );
+                            }
+                        }
+                    }
+                }
+                catch (NpgsqlException ex)
+                {
+                    MessageBox.Show($"Ошибка при загрузке стадии проекта: {ex.Message}",
+                                  "Ошибка базы данных",
+                                  MessageBoxButton.OK,
+                                  MessageBoxImage.Error);
+                }
+            }
+            return null;
+        }
+
+        public bool CreateProjectStage(
+            string stageName,
+            string description,
+            DateTime startDate,
+            DateTime? endDate,
+            int statusId,
+            int projectId,
+            out int newStageId)
+        {
+            newStageId = 0;
+            int currentEmployeeId = Authorization.currentUser.UserId;
+
+            using (var connection = new NpgsqlConnection(DbConnection.connectionStr))
+            {
+                try
+                {
+                    connection.Open();
+                    bool isAdmin = IsCurrentUserAdmin(connection);
+
+                    if (!isAdmin)
+                    {
+                        using (var checkCmd = new NpgsqlCommand(
+                            @"SELECT COUNT(*) 
+                              FROM task t
+                              JOIN team_employee te ON t.team_id = te.team_id
+                              WHERE t.project_id = @projectId AND te.employee_id = @employeeId",
+                            connection))
+                        {
+                            checkCmd.Parameters.AddWithValue("@projectId", projectId);
+                            checkCmd.Parameters.AddWithValue("@employeeId", currentEmployeeId);
+                            int count = Convert.ToInt32(checkCmd.ExecuteScalar());
+
+                            if (count == 0)
+                            {
+                                MessageBox.Show("Вы не являетесь участником этого проекта и не можете создавать этапы для него",
+                                              "Ошибка доступа",
+                                              MessageBoxButton.OK,
+                                              MessageBoxImage.Warning);
+                                return false;
+                            }
+                        }
+                    }
+
+                    using (var cmd = new NpgsqlCommand(
+                        "INSERT INTO project_stage (stage_name, project_stage_description, start_date, end_date, status_id, project_id) " +
+                        "VALUES (@stageName, @description, @startDate, @endDate, @statusId, @projectId) RETURNING stage_id",
+                        connection))
+                    {
+                        cmd.Parameters.AddWithValue("@stageName", stageName);
+                        cmd.Parameters.AddWithValue("@description", description ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@startDate", startDate);
+                        cmd.Parameters.AddWithValue("@endDate", endDate ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@statusId", statusId);
+                        cmd.Parameters.AddWithValue("@projectId", projectId);
+
+                        newStageId = Convert.ToInt32(cmd.ExecuteScalar());
+                        return true;
+                    }
+                }
+                catch (NpgsqlException ex)
+                {
+                    MessageBox.Show($"Ошибка при создании стадии проекта: {ex.Message}",
+                                  "Ошибка базы данных",
+                                  MessageBoxButton.OK,
+                                  MessageBoxImage.Error);
+                    return false;
+                }
+            }
+        }
+
+        public bool UpdateProjectStage(
+            int stageId,
+            string stageName,
+            string description,
+            DateTime startDate,
+            DateTime? endDate,
+            int statusId,
+            int projectId)
+        {
+            int currentEmployeeId = Authorization.currentUser.UserId;
+
+            using (var connection = new NpgsqlConnection(DbConnection.connectionStr))
+            {
+                try
+                {
+                    connection.Open();
+                    bool isAdmin = IsCurrentUserAdmin(connection);
+
+                    if (!isAdmin)
+                    {
+                        using (var checkCmd = new NpgsqlCommand(
+                            @"SELECT COUNT(*) 
+                              FROM task t
+                              JOIN team_employee te ON t.team_id = te.team_id
+                              WHERE t.stage_id = @stageId AND te.employee_id = @employeeId",
+                            connection))
+                        {
+                            checkCmd.Parameters.AddWithValue("@stageId", stageId);
+                            checkCmd.Parameters.AddWithValue("@employeeId", currentEmployeeId);
+                            int count = Convert.ToInt32(checkCmd.ExecuteScalar());
+
+                            if (count == 0)
+                            {
+                                MessageBox.Show("У вас нет прав для редактирования этого этапа проекта",
+                                              "Ошибка доступа",
+                                              MessageBoxButton.OK,
+                                              MessageBoxImage.Warning);
+                                return false;
+                            }
+                        }
+                    }
+
+                    using (var cmd = new NpgsqlCommand(
+                        @"UPDATE project_stage 
+                          SET stage_name = @stageName, 
+                              project_stage_description = @description, 
+                              start_date = @startDate, 
+                              end_date = @endDate, 
+                              status_id = @statusId, 
+                              project_id = @projectId
+                          WHERE stage_id = @stageId",
+                        connection))
+                    {
+                        cmd.Parameters.AddWithValue("@stageId", stageId);
+                        cmd.Parameters.AddWithValue("@stageName", stageName);
+                        cmd.Parameters.AddWithValue("@description", description ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@startDate", startDate);
+                        cmd.Parameters.AddWithValue("@endDate", endDate ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@statusId", statusId);
+                        cmd.Parameters.AddWithValue("@projectId", projectId);
+
+                        int rowsAffected = cmd.ExecuteNonQuery();
+                        return rowsAffected > 0;
+                    }
+                }
+                catch (NpgsqlException ex)
+                {
+                    MessageBox.Show($"Ошибка при обновлении стадии проекта: {ex.Message}",
+                                  "Ошибка базы данных",
+                                  MessageBoxButton.OK,
+                                  MessageBoxImage.Error);
+                    return false;
+                }
+            }
+        }
+
+        public bool DeleteProjectStage(int stageId)
+        {
+            int currentEmployeeId = Authorization.currentUser.UserId;
+
+            using (var connection = new NpgsqlConnection(DbConnection.connectionStr))
+            {
+                try
+                {
+                    connection.Open();
+                    bool isAdmin = IsCurrentUserAdmin(connection);
+
+                    if (!isAdmin)
+                    {
+                        using (var checkCmd = new NpgsqlCommand(
+                            @"SELECT COUNT(*) 
+                              FROM task t
+                              JOIN team_employee te ON t.team_id = te.team_id
+                              WHERE t.stage_id = @stageId AND te.employee_id = @employeeId",
+                            connection))
+                        {
+                            checkCmd.Parameters.AddWithValue("@stageId", stageId);
+                            checkCmd.Parameters.AddWithValue("@employeeId", currentEmployeeId);
+                            int count = Convert.ToInt32(checkCmd.ExecuteScalar());
+
+                            if (count == 0)
+                            {
+                                MessageBox.Show("У вас нет прав для удаления этого этапа проекта",
+                                              "Ошибка доступа",
+                                              MessageBoxButton.OK,
+                                              MessageBoxImage.Warning);
+                                return false;
+                            }
+                        }
+                    }
+
+                    using (var cmd = new NpgsqlCommand(
+                        "DELETE FROM project_stage WHERE stage_id = @stageId",
+                        connection))
+                    {
+                        cmd.Parameters.AddWithValue("@stageId", stageId);
+                        int rowsAffected = cmd.ExecuteNonQuery();
+                        return rowsAffected > 0;
+                    }
+                }
+                catch (NpgsqlException ex)
+                {
+                    MessageBox.Show($"Ошибка при удалении стадии проекта: {ex.Message}",
+                                  "Ошибка базы данных",
+                                  MessageBoxButton.OK,
+                                  MessageBoxImage.Error);
+                    return false;
+                }
+            }
         }
     }
 }

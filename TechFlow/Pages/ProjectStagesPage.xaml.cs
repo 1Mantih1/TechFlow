@@ -119,7 +119,7 @@ namespace TechFlow.Pages
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки этапов: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка загрузки этапов: {ex.Message}");
             }
         }
         private void ProjectStages_Loaded(object sender, RoutedEventArgs e)
@@ -154,7 +154,7 @@ namespace TechFlow.Pages
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка поиска: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка поиска: {ex.Message}");
             }
         }
 

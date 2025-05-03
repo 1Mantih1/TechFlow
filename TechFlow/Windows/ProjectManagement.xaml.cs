@@ -36,11 +36,26 @@ namespace TechFlow.Windows
             InitializeComponent();
             InitializePages();
             InitializeApplication();
+            CheckAdminVisibility();
+        }
+
+        private void CheckAdminVisibility()
+        {
+            try
+            {
+                UserFromDb db = new UserFromDb();
+                AdminButton.Visibility = db.IsAdmin(Authorization.currentUser.UserId)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show($"Ошибка проверки прав администратора: {ex.Message}");
+            }
         }
 
         private void InitializePages()
         {
-            // Инициализация всех страниц
             _pages[typeof(ProjectsPage)] = new ProjectsPage();
             _pages[typeof(ProjectStagesPage)] = new ProjectStagesPage();
             _pages[typeof(TeamsPage)] = new TeamsPage();
@@ -49,7 +64,6 @@ namespace TechFlow.Windows
             _pages[typeof(AdminPanelPage)] = new AdminPanelPage();
             _pages[typeof(EditProfilePage)] = new EditProfilePage();
 
-            // Подписка на события выбора
             if (_pages[typeof(ProjectsPage)] is ProjectsPage projectsPage)
                 projectsPage.OnProjectSelected += HandleSelection;
 
@@ -69,7 +83,6 @@ namespace TechFlow.Windows
             ContentFrame.NavigationUIVisibility = NavigationUIVisibility.Hidden;
             LoadUserData();
 
-            // Первоначальная загрузка страницы проектов
             var initialPage = _pages[typeof(ProjectsPage)];
             ContentFrame.Content = initialPage;
             ActivateButton(ProjectButton);
@@ -79,14 +92,13 @@ namespace TechFlow.Windows
         {
             if (Authorization.currentUser == null)
             {
-                MessageBox.Show("Пользователь не авторизован!");
+                CustomMessageBox.Show("Пользователь не авторизован!");
                 return;
             }
 
             UpdateUserInfo(Authorization.currentUser);
         }
 
-        // Метод для создания анимации прозрачности
         private Storyboard CreateOpacityAnimation(FrameworkElement target, double toValue, TimeSpan duration)
         {
             var animation = new DoubleAnimation
@@ -104,7 +116,6 @@ namespace TechFlow.Windows
             return storyboard;
         }
 
-        // Основной метод навигации
         private async Task NavigateToPage(Page page)
         {
             if (_isTransitionInProgress || ContentFrame.Content == page)
@@ -114,40 +125,31 @@ namespace TechFlow.Windows
 
             try
             {
-                // Сохраняем текущую страницу в стек (кроме EditProfilePage)
                 if (ContentFrame.Content != null && !(page is EditProfilePage))
                 {
                     _navigationStack.Push(ContentFrame.Content as Page);
                 }
 
-                // Анимация выхода старой страницы
                 if (ContentFrame.Content is FrameworkElement oldPage)
                 {
                     var exitStoryboard = CreateOpacityAnimation(oldPage, 0, TimeSpan.FromMilliseconds(200));
                     await exitStoryboard.BeginAsync(oldPage);
                 }
 
-                // Обновляем контент
                 ContentFrame.Content = page;
 
-                // Анимация появления новой страницы
                 if (page is FrameworkElement newPage)
                 {
-                    // Устанавливаем начальную прозрачность новой страницы
                     newPage.Opacity = 0;
 
-                    // Кэшируем страницу для плавной отрисовки
                     newPage.CacheMode = new BitmapCache();
 
-                    // Даем время для рендеринга страницы
                     await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
 
-                    // Создаем и запускаем анимацию появления новой страницы
                     var enterStoryboard = CreateOpacityAnimation(newPage, 1, TimeSpan.FromMilliseconds(200));
                     await enterStoryboard.BeginAsync(newPage);
                 }
 
-                // Обновляем активную кнопку для текущей страницы
                 UpdateActiveButtonForPage(page.GetType());
             }
             finally
@@ -156,7 +158,6 @@ namespace TechFlow.Windows
             }
         }
 
-        // Метод для навигации назад
         public async Task GoBack()
         {
             if (_isTransitionInProgress || _navigationStack.Count == 0)
@@ -166,31 +167,25 @@ namespace TechFlow.Windows
 
             try
             {
-                // Анимация исчезновения текущей страницы
                 if (ContentFrame.Content is FrameworkElement oldPage)
                 {
                     var exitStoryboard = CreateOpacityAnimation(oldPage, 0, TimeSpan.FromMilliseconds(200));
                     await exitStoryboard.BeginAsync(oldPage);
                 }
 
-                // Получаем предыдущую страницу из стека
                 var previousPage = _navigationStack.Pop();
 
-                // Навигация назад
                 ContentFrame.Content = previousPage;
 
-                // Анимация появления предыдущей страницы
                 if (previousPage is FrameworkElement newPage)
                 {
                     newPage.Opacity = 0;
-                    await Task.Delay(10); // Мгновенная задержка перед запуском анимации
+                    await Task.Delay(10); 
 
-                    // Анимация появления страницы
                     var enterStoryboard = CreateOpacityAnimation(newPage, 1, TimeSpan.FromMilliseconds(200));
                     await enterStoryboard.BeginAsync(newPage);
                 }
 
-                // Обновляем активную кнопку для предыдущей страницы
                 UpdateActiveButtonForPage(previousPage.GetType());
             }
             finally
@@ -244,13 +239,11 @@ namespace TechFlow.Windows
 
             if (_isEditProfileOpen)
             {
-                // Возвращаемся на предыдущую страницу
                 await GoBack();
                 _isEditProfileOpen = false;
             }
             else
             {
-                // Сохраняем текущую страницу перед переходом на страницу редактирования
                 if (ContentFrame.Content != null && !(ContentFrame.Content is EditProfilePage))
                 {
                     _navigationStack.Push(ContentFrame.Content as Page);
@@ -297,7 +290,7 @@ namespace TechFlow.Windows
                 try
                 {
                     userName.Text = $"{updatedUser.LastName} {updatedUser.FirstName}";
-                    userRole.Text = updatedUser.RoleName ?? "Пользователь"; // Добавлено отображение роли
+                    userRole.Text = updatedUser.RoleName ?? "Администратор"; 
                     LoadUserAvatar(updatedUser.ImagePath);
                 }
                 catch (Exception ex)
@@ -316,19 +309,14 @@ namespace TechFlow.Windows
                 return;
             }
 
-            // Пробуем несколько вариантов расположения файла
             string[] possiblePaths =
             {
-        // 1. Проверяем как абсолютный путь
         imagePath,
         
-        // 2. Проверяем относительно корня приложения
         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, imagePath),
         
-        // 3. Проверяем относительно папки avatar (для разработки)
         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../../avatar", Path.GetFileName(imagePath)),
         
-        // 4. Проверяем в папке Resources
         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Images", Path.GetFileName(imagePath))
     };
 
@@ -349,10 +337,9 @@ namespace TechFlow.Windows
                         return;
                     }
                 }
-                catch { /* Продолжаем проверять другие пути */ }
+                catch {  }
             }
 
-            // Если ни один вариант не сработал
             SetDefaultAvatar();
         }
 
@@ -360,13 +347,10 @@ namespace TechFlow.Windows
         {
             string[] defaultPaths =
             {
-        // 1. Стандартный путь в папке Resources
         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Images", "default_avatar.png"),
         
-        // 2. Альтернативный путь в папке avatar
         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../../avatar", "man1.png"),
         
-        // 3. Встроенный ресурс
         "pack://application:,,,/YourAppName;component/Resources/default_avatar.png"
     };
 
@@ -387,10 +371,9 @@ namespace TechFlow.Windows
                         return;
                     }
                 }
-                catch { /* Продолжаем пробовать другие пути */ }
+                catch { }
             }
 
-            // Если совсем ничего не работает
             AvatarImage.Source = null;
         }
 
@@ -441,7 +424,6 @@ namespace TechFlow.Windows
 
         private async void AdminButton_Click(object sender, RoutedEventArgs e)
         {
-            // Если текущая страница уже является AdminPanelPage, возвращаемся назад
             if (ContentFrame.Content is AdminPanelPage)
             {
                 await GoBack();

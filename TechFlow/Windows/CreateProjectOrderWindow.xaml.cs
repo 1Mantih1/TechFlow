@@ -137,7 +137,7 @@ namespace TechFlow.Windows
 
         private void ShowValidationError(string message)
         {
-            MessageBox.Show(message, "Ошибка валидации", MessageBoxButton.OK, MessageBoxImage.Warning);
+            CustomMessageBox.Show(message, "Ошибка валидации");
         }
 
         private void NextButton_Click(object sender, RoutedEventArgs e)
@@ -176,22 +176,19 @@ namespace TechFlow.Windows
 
                 if (success)
                 {
-                    MessageBox.Show("Заказ проекта успешно создан и отправлен на модерацию!", "Успех",
-                                  MessageBoxButton.OK, MessageBoxImage.Information);
+                    CustomMessageBox.Show("Заказ проекта успешно создан и отправлен на модерацию!", "Успех");
                     this.Close();
                     Authorization authorization = new Authorization();
                     authorization.Show();
                 }
                 else
                 {
-                    MessageBox.Show("Не удалось создать проект", "Ошибка",
-                                  MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show("Не удалось создать проект", "Ошибка");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка",
-                              MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show($"Ошибка: {ex.Message}", "Ошибка");
             }
         }
 
@@ -206,8 +203,7 @@ namespace TechFlow.Windows
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            if (MessageBox.Show("Вы уверены, что хотите отменить создание заказа? Все введенные данные будут потеряны.",
-                              "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            if (CustomMessageBox.Show("Вы уверены, что хотите отменить создание заказа? Все введенные данные будут потеряны", "Подтверждение") == MessageBoxResult.Yes)
             {
                 this.Close();
             }

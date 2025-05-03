@@ -141,6 +141,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Pages\AdminTimesheetPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Pages\AttachmentsPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -243,6 +247,8 @@
     <Compile Include="Classes\Team.cs" />
     <Compile Include="Classes\TeamEmployee.cs" />
     <Compile Include="Classes\Timesheet.cs" />
+    <Compile Include="Classes\TimesheetDisplay.cs" />
+    <Compile Include="Classes\TimesheetRecord.cs" />
     <Compile Include="Classes\User.cs" />
     <Compile Include="Classes\Verification.cs" />
     <Compile Include="Classes\WorkStatus.cs" />
@@ -269,6 +275,9 @@
     </Compile>
     <Compile Include="Pages\AdminPanelPage.xaml.cs">
       <DependentUpon>AdminPanelPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\AdminTimesheetPage.xaml.cs">
+      <DependentUpon>AdminTimesheetPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Pages\AttachmentsPage.xaml.cs">
       <DependentUpon>AttachmentsPage.xaml</DependentUpon>

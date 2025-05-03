@@ -15,6 +15,8 @@ public class User
     public string Email { get; set; }
     public string ImagePath { get; set; }
 
+    public string FullName => $"{LastName} {FirstName}";
+
     public User() { }
 
     public User(int userId, string firstName, string lastName, DateTime dateOfBirth,

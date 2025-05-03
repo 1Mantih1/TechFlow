@@ -1,6 +1,8 @@
 ﻿using Npgsql;
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Threading.Tasks;
 using System.Windows;
 using TechFlow.Classes;
 
@@ -18,9 +20,15 @@ namespace TechFlow.Models
                 {
                     connection.Open();
                     string sqlExp = @"
-                SELECT discussion_id, discussion_name, creation_date, completion_date, task_id
-                FROM public.discussion
-                WHERE task_id = @taskId;";
+                SELECT 
+                    d.discussion_id,
+                    d.discussion_name,
+                    d.creation_date,
+                    d.completion_date,
+                    d.task_id
+                FROM discussion d
+                WHERE d.task_id = @taskId
+                ORDER BY d.creation_date DESC";
 
                     using (NpgsqlCommand command = new NpgsqlCommand(sqlExp, connection))
                     {
@@ -30,102 +38,177 @@ namespace TechFlow.Models
                         {
                             while (reader.Read())
                             {
-                                discussions.Add(new Discussion(
-                                    reader.GetInt32(0),
-                                    reader.GetString(1),
-                                    reader.GetDateTime(2),
-                                    reader.IsDBNull(3) ? (DateTime?)null : reader.GetDateTime(3), 
-                                    reader.GetInt32(4) 
-                                ));
+                                try
+                                {
+                                    discussions.Add(new Discussion(
+                                        reader.GetInt32(reader.GetOrdinal("discussion_id")),
+                                        reader.GetString(reader.GetOrdinal("discussion_name")),
+                                        reader.GetDateTime(reader.GetOrdinal("creation_date")),
+                                        reader.IsDBNull(reader.GetOrdinal("completion_date")) ?
+                                            (DateTime?)null :
+                                            reader.GetDateTime(reader.GetOrdinal("completion_date")),
+                                        reader.GetInt32(reader.GetOrdinal("task_id"))
+                                    ));
+                                }
+                                catch (Exception ex)
+                                {
+                                    MessageBox.Show($"Ошибка при чтении обсуждения: {ex.Message}");
+                                }
                             }
                         }
                     }
                 }
                 catch (NpgsqlException ex)
                 {
-                    MessageBox.Show("Ошибка загрузки обсуждений: " + ex.Message);
+                    MessageBox.Show($"Ошибка загрузки обсуждений: {ex.Message}");
                 }
             }
 
             return discussions;
         }
 
+        public int GetDiscussionIdByTaskId(int taskId)
+        {
+            using (var connection = new NpgsqlConnection(DbConnection.connectionStr))
+            {
+                connection.Open();
+                var cmd = new NpgsqlCommand(
+                    "SELECT discussion_id FROM discussion WHERE task_id = @taskId",
+                    connection);
+                cmd.Parameters.AddWithValue("@taskId", taskId);
 
+                var result = cmd.ExecuteScalar();
+                return result != null ? Convert.ToInt32(result) : -1;
+            }
+        }
+
+        // Обновлённый метод загрузки комментариев
         public List<DiscussionComment> LoadComments(int discussionId)
         {
-            List<DiscussionComment> comments = new List<DiscussionComment>();
+            var comments = new List<DiscussionComment>();
 
-            using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
+            if (discussionId <= 0) return comments;
+
+            using (var connection = new NpgsqlConnection(DbConnection.connectionStr))
             {
                 try
                 {
                     connection.Open();
-                    string sqlExp = @"
-                SELECT c.comment_id, c.comment_text, c.creation_date, c.discussion_id, c.employee_id,
-                       e.first_name, e.last_name, e.image_path
-                FROM public.discussion_comment c
-                JOIN public.employee e ON c.employee_id = e.employee_id
-                WHERE c.discussion_id = @discussionId
-                ORDER BY c.creation_date;";
+                    var sql = @"SELECT 
+                            dc.comment_id,
+                            dc.comment_text,
+                            dc.creation_date,
+                            dc.discussion_id,
+                            dc.employee_id,
+                            e.first_name,
+                            e.last_name,
+                            e.image_path
+                        FROM discussion_comment dc
+                        JOIN employee e ON dc.employee_id = e.employee_id
+                        WHERE dc.discussion_id = @disc_id
+                        ORDER BY dc.creation_date";
 
-                    using (NpgsqlCommand command = new NpgsqlCommand(sqlExp, connection))
+                    using (var cmd = new NpgsqlCommand(sql, connection))
                     {
-                        command.Parameters.AddWithValue("@discussionId", discussionId);
+                        cmd.Parameters.AddWithValue("@disc_id", discussionId);
 
-                        using (NpgsqlDataReader reader = command.ExecuteReader())
+                        using (var reader = cmd.ExecuteReader())
                         {
                             while (reader.Read())
                             {
                                 comments.Add(new DiscussionComment(
-                                    Convert.ToInt32(reader["comment_id"]),
-                                    reader["comment_text"].ToString(),
-                                    Convert.ToDateTime(reader["creation_date"]),
-                                    Convert.ToInt32(reader["discussion_id"]),
-                                    Convert.ToInt32(reader["employee_id"]),
-                                    reader["first_name"].ToString(),
-                                    reader["last_name"].ToString(),
-                                    reader["image_path"].ToString()
+                                    reader.GetInt32(0),
+                                    reader.GetString(1),
+                                    reader.GetDateTime(2),
+                                    reader.GetInt32(3),
+                                    reader.GetInt32(4),
+                                    reader.GetString(5),
+                                    reader.GetString(6),
+                                    reader.GetString(7)
                                 ));
                             }
                         }
                     }
                 }
-                catch (NpgsqlException ex)
+                catch (Exception ex)
                 {
-                    MessageBox.Show("Ошибка загрузки комментариев: " + ex.Message);
+                    MessageBox.Show($"Ошибка загрузки комментариев: {ex.Message}");
                 }
             }
 
             return comments;
         }
 
-        public void AddComment(string commentText, int discussionId, int employeeId)
+        public bool AddComment(string commentText, int discussionId, int employeeId)
         {
-            using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
+            // Валидация параметров
+            if (discussionId <= 0)
             {
-                try
+                MessageBox.Show("Неверный ID обсуждения");
+                return false;
+            }
+
+            using (var connection = new NpgsqlConnection(DbConnection.connectionStr))
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
                 {
-                    connection.Open();
-                    string sqlExp = @"
-                INSERT INTO public.discussion_comment 
-                (comment_text, creation_date, discussion_id, employee_id)
-                VALUES (@commentText, @creationDate, @discussionId, @employeeId);";
-
-                    using (NpgsqlCommand command = new NpgsqlCommand(sqlExp, connection))
+                    try
                     {
-                        command.Parameters.AddWithValue("@commentText", commentText);
-                        command.Parameters.AddWithValue("@creationDate", DateTime.Now);
-                        command.Parameters.AddWithValue("@discussionId", discussionId);
-                        command.Parameters.AddWithValue("@employeeId", employeeId);
+                        // 1. Проверяем существование обсуждения
+                        if (!DiscussionExists(discussionId, connection, transaction))
+                        {
+                            MessageBox.Show($"Обсуждение с ID {discussionId} не найдено");
+                            transaction.Rollback();
+                            return false;
+                        }
 
-                        command.ExecuteNonQuery();
+                        // 2. Добавляем комментарий
+                        var cmd = new NpgsqlCommand(
+                            @"INSERT INTO discussion_comment 
+                    (comment_text, creation_date, discussion_id, employee_id) 
+                    VALUES (@text, CURRENT_TIMESTAMP, @disc_id, @emp_id)
+                    RETURNING comment_id;", // Добавлено RETURNING для проверки
+                            connection, transaction);
+
+                        cmd.Parameters.AddWithValue("@text", commentText);
+                        cmd.Parameters.AddWithValue("@disc_id", discussionId);
+                        cmd.Parameters.AddWithValue("@emp_id", employeeId);
+
+                        var newCommentId = cmd.ExecuteScalar();
+                        if (newCommentId == null)
+                        {
+                            MessageBox.Show("Не удалось добавить комментарий");
+                            transaction.Rollback();
+                            return false;
+                        }
+
+                        transaction.Commit();
+                        return true;
+                    }
+                    catch (NpgsqlException ex)
+                    {
+                        transaction.Rollback();
+                        MessageBox.Show($"Ошибка: Не найдено обсуждение с ID {discussionId}");
+                        return false;
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        MessageBox.Show($"Ошибка при добавлении комментария: {ex.Message}");
+                        return false;
                     }
                 }
-                catch (NpgsqlException ex)
-                {
-                    MessageBox.Show("Ошибка добавления комментария: " + ex.Message);
-                }
             }
+        }
+
+        private bool DiscussionExists(int discussionId, NpgsqlConnection connection, NpgsqlTransaction transaction)
+        {
+            var cmd = new NpgsqlCommand(
+                "SELECT 1 FROM discussion WHERE discussion_id = @disc_id LIMIT 1",
+                connection, transaction);
+            cmd.Parameters.AddWithValue("@disc_id", discussionId);
+            return cmd.ExecuteScalar() != null;
         }
 
         public User GetEmployeeById(int employeeId)
@@ -137,15 +220,12 @@ namespace TechFlow.Models
                 try
                 {
                     connection.Open();
-
-                    string sqlExp = @"
-                SELECT employee_id, first_name, last_name, image_path
-                FROM public.employee
-                WHERE employee_id = @employeeId;";
+                    string sqlExp = @"SELECT * FROM public.get_employee_by_id(@p_employee_id)";
 
                     using (NpgsqlCommand command = new NpgsqlCommand(sqlExp, connection))
                     {
-                        command.Parameters.AddWithValue("@employeeId", employeeId);
+                        command.CommandType = CommandType.Text;
+                        command.Parameters.AddWithValue("@p_employee_id", employeeId);
 
                         using (NpgsqlDataReader reader = command.ExecuteReader())
                         {
@@ -153,10 +233,10 @@ namespace TechFlow.Models
                             {
                                 employee = new User
                                 {
-                                    UserId = Convert.ToInt32(reader["employee_id"]),
-                                    FirstName = reader["first_name"].ToString(),
-                                    LastName = reader["last_name"].ToString(),
-                                    ImagePath = reader["image_path"].ToString()
+                                    UserId = reader.GetInt32(reader.GetOrdinal("employee_id")),
+                                    FirstName = reader.GetString(reader.GetOrdinal("first_name")),
+                                    LastName = reader.GetString(reader.GetOrdinal("last_name")),
+                                    ImagePath = reader.GetString(reader.GetOrdinal("image_path"))
                                 };
                             }
                         }
@@ -170,7 +250,5 @@ namespace TechFlow.Models
 
             return employee;
         }
-
-
     }
 }

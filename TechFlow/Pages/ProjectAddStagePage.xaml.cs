@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using Npgsql;
 using TechFlow.Models;
 using TechFlow.Classes;
+using TechFlow.Windows;
 
 namespace TechFlow.Pages
 {
@@ -40,7 +41,7 @@ namespace TechFlow.Pages
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки проектов: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка загрузки проектов: {ex.Message}");
             }
         }
 
@@ -68,7 +69,7 @@ namespace TechFlow.Pages
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки статусов: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка загрузки статусов: {ex.Message}");
             }
         }
 
@@ -76,25 +77,25 @@ namespace TechFlow.Pages
         {
             if (string.IsNullOrWhiteSpace(StageNameField.Text))
             {
-                MessageBox.Show("Введите название стадии!");
+                CustomMessageBox.Show("Введите название стадии!");
                 return;
             }
 
             if (ProjectComboBox.SelectedItem == null)
             {
-                MessageBox.Show("Выберите проект!");
+                CustomMessageBox.Show("Выберите проект!");
                 return;
             }
 
             if (StatusComboBox.SelectedItem == null)
             {
-                MessageBox.Show("Выберите статус!");
+                CustomMessageBox.Show("Выберите статус!");
                 return;
             }
 
             if (StartDateField.SelectedDate == null)
             {
-                MessageBox.Show("Выберите дату начала!");
+                CustomMessageBox.Show("Выберите дату начала!");
                 return;
             }
 
@@ -134,7 +135,7 @@ namespace TechFlow.Pages
                         int rowsAffected = command.ExecuteNonQuery();
                         if (rowsAffected > 0)
                         {
-                            MessageBox.Show("Стадия проекта успешно добавлена!");
+                            CustomMessageBox.Show("Стадия проекта успешно добавлена!");
                             ClearForm();
                         }
                     }
@@ -142,7 +143,7 @@ namespace TechFlow.Pages
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при добавлении стадии: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка при добавлении стадии: {ex.Message}");
             }
         }
 

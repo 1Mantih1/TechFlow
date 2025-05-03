@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using TechFlow.Classes;
 using TechFlow.Models;
+using TechFlow.Windows;
 
 namespace TechFlow.Pages
 {
@@ -27,20 +28,18 @@ namespace TechFlow.Pages
         {
             try
             {
-                // Валидация данных
                 if (string.IsNullOrWhiteSpace(TeamNameField.Text))
                 {
-                    MessageBox.Show("Введите название команды", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    CustomMessageBox.Show("Введите название команды", "Ошибка");
                     return;
                 }
 
                 if (OrganizationDateField.SelectedDate == null)
                 {
-                    MessageBox.Show("Укажите дату организации команды", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    CustomMessageBox.Show("Укажите дату организации команды", "Ошибка");
                     return;
                 }
 
-                // Создание объекта команды
                 var newTeam = new Team
                 {
                     TeamName = TeamNameField.Text,
@@ -49,17 +48,13 @@ namespace TechFlow.Pages
                     CompletionDate = CompletionDateField.SelectedDate
                 };
 
-                // Добавление команды в базу данных
                 int teamId = _teamFromDb.AddTeam(newTeam);
 
                 if (teamId > 0)
                 {
-                    MessageBox.Show($"Команда успешно добавлена (ID: {teamId})",
-                                 "Успех",
-                                 MessageBoxButton.OK,
-                                 MessageBoxImage.Information);
+                    CustomMessageBox.Show($"Команда успешно добавлена (ID: {teamId})", "Успех");
 
-                    // Возврат на предыдущую страницу
+
                     if (NavigationService.CanGoBack)
                     {
                         NavigationService.GoBack();
@@ -67,18 +62,14 @@ namespace TechFlow.Pages
                 }
                 else
                 {
-                    MessageBox.Show("Не удалось добавить команду",
-                                 "Ошибка",
-                                 MessageBoxButton.OK,
-                                 MessageBoxImage.Error);
+                    CustomMessageBox.Show("Не удалось добавить команду",
+                                 "Ошибка");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при добавлении команды: {ex.Message}",
-                             "Ошибка",
-                             MessageBoxButton.OK,
-                             MessageBoxImage.Error);
+                CustomMessageBox.Show($"Ошибка при добавлении команды: {ex.Message}",
+                             "Ошибка");
             }
         }
     }

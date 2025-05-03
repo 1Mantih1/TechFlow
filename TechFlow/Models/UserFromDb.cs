@@ -218,6 +218,68 @@ namespace TechFlow.Models
             }
         }
 
+        public List<User> LoadEmployees()
+        {
+            List<User> employees = new List<User>();
+
+            using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
+            {
+                try
+                {
+                    connection.Open();
+
+                    string sqlQuery = @"
+    SELECT 
+        e.employee_id,
+        e.login,
+        e.first_name,
+        e.last_name,
+        e.email,
+        e.phone,
+        e.address,
+        e.date_of_birth,
+        e.image_path,
+        e.role_id,
+        er.employee_role_name as role_name
+    FROM employee e
+    JOIN employee_role er ON e.role_id = er.employee_role_id
+    ORDER BY e.last_name, e.first_name;";
+
+                    using (NpgsqlCommand command = new NpgsqlCommand(sqlQuery, connection))
+                    using (NpgsqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            employees.Add(new User
+                            {
+                                UserId = reader.GetInt32(reader.GetOrdinal("employee_id")),
+                                Login = reader.GetString(reader.GetOrdinal("login")),
+                                FirstName = reader.GetString(reader.GetOrdinal("first_name")),
+                                LastName = reader.GetString(reader.GetOrdinal("last_name")),
+                                Email = reader.GetString(reader.GetOrdinal("email")),
+                                Phone = reader.IsDBNull(reader.GetOrdinal("phone")) ? null : reader.GetString(reader.GetOrdinal("phone")),
+                                Address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString(reader.GetOrdinal("address")),
+                                DateOfBirth = reader.IsDBNull(reader.GetOrdinal("date_of_birth"))
+    ? DateTime.MinValue
+    : reader.GetDateTime(reader.GetOrdinal("date_of_birth")),
+
+
+                                ImagePath = reader.IsDBNull(reader.GetOrdinal("image_path")) ? "../image/man1.png" : reader.GetString(reader.GetOrdinal("image_path")),
+                                RoleId = reader.GetInt32(reader.GetOrdinal("role_id")),
+                                RoleName = reader.GetString(reader.GetOrdinal("role_name"))
+                            });
+                        }
+                    }
+                }
+                catch (NpgsqlException ex)
+                {
+                    MessageBox.Show($"Ошибка загрузки сотрудников: {ex.Message}");
+                }
+            }
+
+            return employees;
+        }
+
         public bool CheckUser(string login)
         {
             try
@@ -278,7 +340,6 @@ namespace TechFlow.Models
                         cmd.Parameters["dateOfBirth"].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Date;
 
                         int employeeId = (int)cmd.ExecuteScalar();
-                        MessageBox.Show("Сотрудник успешно добавлен!");
                         return employeeId;
 
                     }
@@ -287,7 +348,7 @@ namespace TechFlow.Models
             catch (NpgsqlException ex)
             {
                 MessageBox.Show("Ошибка при добавлении сотрудника: " + ex.Message);
-                return -1;
+                return 0;
             }
         }
 
@@ -330,26 +391,34 @@ namespace TechFlow.Models
                 {
                     connect.Open();
 
-                    string sqlExp = "UPDATE employee SET first_name = @firstName, last_name = @lastName, " +
-                                    "email = @email, phone = @phone, address = @address, date_of_birth = @dateOfBirth, " +
-                                    "role_id = @roleId WHERE employee_id = @id";
+                    string sqlExp = @"UPDATE employee 
+                            SET first_name = @firstName, 
+                                last_name = @lastName,
+                                email = @email, 
+                                phone = @phone, 
+                                address = @address, 
+                                date_of_birth = @dateOfBirth, 
+                                role_id = @roleId 
+                            WHERE employee_id = @id";
 
-                    NpgsqlCommand cmd = new NpgsqlCommand(sqlExp, connect);
-                    cmd.Parameters.AddWithValue("firstName", employee.FirstName);
-                    cmd.Parameters.AddWithValue("lastName", employee.LastName);
-                    cmd.Parameters.AddWithValue("email", employee.Email);
-                    cmd.Parameters.AddWithValue("phone", employee.Phone ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("address", employee.Address ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("dateOfBirth", employee.DateOfBirth);
-                    cmd.Parameters.AddWithValue("roleId", employee.RoleId);
-                    cmd.Parameters.AddWithValue("id", employee.UserId);
+                    using (NpgsqlCommand cmd = new NpgsqlCommand(sqlExp, connect))
+                    {
+                        cmd.Parameters.AddWithValue("firstName", employee.FirstName);
+                        cmd.Parameters.AddWithValue("lastName", employee.LastName);
+                        cmd.Parameters.AddWithValue("email", employee.Email);
+                        cmd.Parameters.AddWithValue("phone", employee.Phone ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("address", employee.Address ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("dateOfBirth", employee.DateOfBirth);
+                        cmd.Parameters.AddWithValue("roleId", 35);
+                        cmd.Parameters.AddWithValue("id", employee.UserId);
 
-                    return cmd.ExecuteNonQuery() > 0;
+                        return cmd.ExecuteNonQuery() > 0;
+                    }
                 }
             }
             catch (NpgsqlException ex)
             {
-                MessageBox.Show("Ошибка при обновлении профиля сотрудника: " + ex.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Ошибка при обновлении профиля: " + ex.Message);
                 return false;
             }
         }
@@ -442,9 +511,9 @@ namespace TechFlow.Models
                     connect.Open();
 
                     string sqlExp = @"SELECT 1 FROM employee e
-                                    JOIN employee_role er ON e.role_id = er.employee_role_id
-                                    WHERE e.employee_id = @employeeId 
-                                    AND er.employee_role_name = 'Администратор'";
+                           JOIN employee_role er ON e.role_id = er.employee_role_id
+                           WHERE e.employee_id = @employeeId 
+                           AND er.employee_role_name = 'Администратор'";
 
                     NpgsqlCommand cmd = new NpgsqlCommand(sqlExp, connect);
                     cmd.Parameters.AddWithValue("@employeeId", employeeId);
@@ -500,11 +569,6 @@ namespace TechFlow.Models
                 using (NpgsqlConnection connect = new NpgsqlConnection(DbConnection.connectionStr))
                 {
                     connect.Open();
-
-                    string deleteCustomerQuery = "DELETE FROM customer WHERE employee_id = @employeeId";
-                    NpgsqlCommand deleteCustomerCmd = new NpgsqlCommand(deleteCustomerQuery, connect);
-                    deleteCustomerCmd.Parameters.AddWithValue("@employeeId", employeeId);
-                    deleteCustomerCmd.ExecuteNonQuery();
 
                     string deleteEmployeeQuery = "DELETE FROM employee WHERE employee_id = @employeeId";
                     NpgsqlCommand deleteEmployeeCmd = new NpgsqlCommand(deleteEmployeeQuery, connect);
@@ -651,7 +715,7 @@ namespace TechFlow.Models
             }
         }
 
-        public List<User> LoadEmployeesWithDefaultRole()
+        public List<User> LoadEmployeesWithRole()
         {
             List<User> employees = new List<User>();
 
@@ -667,6 +731,55 @@ namespace TechFlow.Models
                 FROM employee e
                 JOIN employee_role er ON e.role_id = er.employee_role_id
                 WHERE er.employee_role_name = 'Сотрудник'
+                ORDER BY e.last_name, e.first_name;";
+
+                    using (NpgsqlCommand command = new NpgsqlCommand(sqlQuery, connection))
+                    using (NpgsqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            employees.Add(new User
+                            {
+                                UserId = Convert.ToInt32(reader["employee_id"]),
+                                FirstName = reader["first_name"].ToString(),
+                                LastName = reader["last_name"].ToString(),
+                                DateOfBirth = reader["date_of_birth"] != DBNull.Value ? Convert.ToDateTime(reader["date_of_birth"]) : DateTime.MinValue,
+                                Login = reader["login"].ToString(),
+                                Phone = reader["phone"] != DBNull.Value ? reader["phone"].ToString() : null,
+                                Address = reader["address"] != DBNull.Value ? reader["address"].ToString() : null,
+                                RoleId = Convert.ToInt32(reader["role_id"]),
+                                RoleName = reader["employee_role_name"].ToString(),
+                                Email = reader["email"].ToString(),
+                                ImagePath = reader["image_path"] != DBNull.Value ? reader["image_path"].ToString() : "../image/man1.png"
+                            });
+                        }
+                    }
+                }
+                catch (NpgsqlException ex)
+                {
+                    MessageBox.Show($"Ошибка при загрузке сотрудников: {ex.Message}");
+                }
+            }
+
+            return employees;
+        }
+
+        public List<User> LoadEmployeesWithDefaultRole()
+        {
+            List<User> employees = new List<User>();
+
+            using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
+            {
+                try
+                {
+                    connection.Open();
+                    string sqlQuery = @"
+                SELECT e.employee_id, e.first_name, e.last_name, e.date_of_birth, 
+                       e.login, e.phone, e.address, e.role_id, e.email, e.image_path,
+                       er.employee_role_name
+                FROM employee e
+                JOIN employee_role er ON e.role_id = er.employee_role_id
+                WHERE er.employee_role_name = 'Не определено'
                 ORDER BY e.last_name, e.first_name;";
 
                     using (NpgsqlCommand command = new NpgsqlCommand(sqlQuery, connection))

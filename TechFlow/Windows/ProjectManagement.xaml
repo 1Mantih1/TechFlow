@@ -424,6 +424,7 @@
             Width="40" Height="40" 
             Margin="0,0,0,10"
             HorizontalAlignment="Left"
+            Visibility="Collapsed"
             VerticalAlignment="Top"
             Style="{StaticResource AdminButtonStyle}"
             ToolTip="Админ панель"

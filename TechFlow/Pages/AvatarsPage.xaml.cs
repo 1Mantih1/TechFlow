@@ -16,9 +16,6 @@ using TechFlow.Windows;
 
 namespace TechFlow.Pages
 {
-    /// <summary>
-    /// Логика взаимодействия для AvatarsPage.xaml
-    /// </summary>
     public partial class AvatarsPage : Page
     {
         private EditProfilePage editProfilePage;

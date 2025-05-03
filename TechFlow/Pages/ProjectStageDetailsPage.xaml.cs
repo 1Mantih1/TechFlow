@@ -16,9 +16,6 @@ using TechFlow.Windows;
 
 namespace TechFlow.Pages
 {
-    /// <summary>
-    /// Логика взаимодействия для ProjectStageDetailsPage.xaml
-    /// </summary>
     public partial class ProjectStageDetailsPage : Page
     {
         public ProjectStageDetailsPage()

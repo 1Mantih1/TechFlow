@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Controls;
-using TechFlow.Classes;
 using TechFlow.Models;
 using System.Collections.Generic;
 using System.Linq;
 using Npgsql;
+using TechFlow.Windows;
 
 namespace TechFlow.Pages
 {
@@ -20,33 +20,84 @@ namespace TechFlow.Pages
         {
             InitializeComponent();
             LoadData();
+            TeamComboBox.SelectionChanged += TeamComboBox_SelectionChanged;
         }
 
         private void LoadData()
         {
             try
             {
-                // Загрузка команд
                 var teams = _teamFromDb.LoadTeams();
                 TeamComboBox.ItemsSource = teams;
 
-                // Загрузка сотрудников
-                var employees = _userFromDb.LoadEmployeesWithDefaultRole();
-                EmployeeComboBox.ItemsSource = employees.Select(e => new
-                {
-                    e.UserId,
-                    FullName = $"{e.LastName} {e.FirstName}",
-                    e.ImagePath
-                }).ToList();
-
-                // Загрузка ролей
                 _employeeRoles = LoadEmployeeRoles();
                 RoleComboBox.ItemsSource = _employeeRoles;
+
+                // Загружаем сотрудников с учетом выбранной команды (если есть)
+                if (TeamComboBox.SelectedItem != null)
+                {
+                    var selectedTeam = (dynamic)TeamComboBox.SelectedItem;
+                    RefreshEmployeeList(selectedTeam.TeamId);
+                }
+                else
+                {
+                    // Если команда не выбрана, показываем всех сотрудников
+                    var employees = _userFromDb.LoadEmployeesWithRole()
+                        .Select(e => new
+                        {
+                            e.UserId,
+                            FullName = $"{e.LastName} {e.FirstName}",
+                            e.ImagePath
+                        })
+                        .ToList();
+                    EmployeeComboBox.ItemsSource = employees;
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки данных: {ex.Message}", "Ошибка",
-                              MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show($"Ошибка загрузки данных: {ex.Message}", "Ошибка");
+            }
+        }
+
+        private void RefreshEmployeeList(int teamId)
+        {
+            try
+            {
+                // Загружаем всех сотрудников
+                var allEmployees = _userFromDb.LoadEmployeesWithRole();
+
+                // Получаем ID сотрудников уже в этой команде
+                var teamMembers = _teamEmployeeFromDb.LoadTeamEmployees(teamId)
+                                    .Select(m => m.EmployeeId)
+                                    .ToList();
+
+                // Фильтруем - оставляем только тех, кто не в команде
+                var availableEmployees = allEmployees
+                    .Where(e => !teamMembers.Contains(e.UserId))
+                    .Select(e => new
+                    {
+                        e.UserId,
+                        FullName = $"{e.LastName} {e.FirstName}",
+                        e.ImagePath
+                    })
+                    .ToList();
+
+                // Обновляем комбобокс
+                EmployeeComboBox.ItemsSource = availableEmployees;
+                EmployeeComboBox.SelectedItem = null;
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show($"Ошибка обновления списка сотрудников: {ex.Message}", "Ошибка");
+            }
+        }
+
+        private void TeamComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (TeamComboBox.SelectedItem != null)
+            {
+                var selectedTeam = (dynamic)TeamComboBox.SelectedItem;
+                RefreshEmployeeList(selectedTeam.TeamId);
             }
         }
 
@@ -79,8 +130,7 @@ namespace TechFlow.Pages
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки ролей: {ex.Message}", "Ошибка",
-                              MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show($"Ошибка загрузки ролей: {ex.Message}", "Ошибка");
             }
 
             return roles;
@@ -98,69 +148,58 @@ namespace TechFlow.Pages
         {
             try
             {
-                // Валидация данных
-                if (TeamComboBox.SelectedItem == null)
+                if (TeamComboBox.SelectedItem == null ||
+                    EmployeeComboBox.SelectedItem == null ||
+                    RoleComboBox.SelectedItem == null)
                 {
-                    MessageBox.Show("Выберите команду", "Ошибка",
-                                  MessageBoxButton.OK, MessageBoxImage.Warning);
+                    CustomMessageBox.Show("Заполните все поля", "Ошибка");
                     return;
                 }
 
-                if (EmployeeComboBox.SelectedItem == null)
-                {
-                    MessageBox.Show("Выберите сотрудника", "Ошибка",
-                                  MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                if (RoleComboBox.SelectedItem == null)
-                {
-                    MessageBox.Show("Выберите роль", "Ошибка",
-                                  MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                // Получение выбранных значений
-                dynamic selectedTeam = TeamComboBox.SelectedItem;
-                dynamic selectedEmployee = EmployeeComboBox.SelectedItem;
+                var selectedTeam = (dynamic)TeamComboBox.SelectedItem;
+                var selectedEmployee = (dynamic)EmployeeComboBox.SelectedItem;
                 var selectedRole = (EmployeeRole)RoleComboBox.SelectedItem;
 
                 int teamId = selectedTeam.TeamId;
                 int employeeId = selectedEmployee.UserId;
                 int roleId = selectedRole.EmployeeRoleId;
 
-                // Проверка, не состоит ли уже сотрудник в этой команде
-                if (_teamEmployeeFromDb.IsEmployeeInTeam(employeeId, teamId))
+                bool isInTeam = _teamEmployeeFromDb.IsEmployeeInTeam(employeeId, teamId);
+
+                if (isInTeam)
                 {
-                    MessageBox.Show("Этот сотрудник уже состоит в выбранной команде", "Ошибка",
-                                  MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
+                    bool updateSuccess = _teamEmployeeFromDb.UpdateTeamMemberRole(employeeId, teamId, roleId);
 
-                // Добавление сотрудника в команду
-                bool success = _teamEmployeeFromDb.AddTeamEmployee(roleId, teamId, employeeId);
-
-                if (success)
-                {
-                    MessageBox.Show("Сотрудник успешно добавлен в команду", "Успех",
-                                  MessageBoxButton.OK, MessageBoxImage.Information);
-
-                    // Возврат на предыдущую страницу
-                    if (NavigationService.CanGoBack)
+                    if (updateSuccess)
                     {
+                        CustomMessageBox.Show("Роль сотрудника обновлена", "Успех");
                         NavigationService.GoBack();
+                    }
+                    else
+                    {
+                        CustomMessageBox.Show("Не удалось обновить роль", "Ошибка");
                     }
                 }
                 else
                 {
-                    MessageBox.Show("Не удалось добавить сотрудника в команду", "Ошибка",
-                                  MessageBoxButton.OK, MessageBoxImage.Error);
+                    bool addSuccess = _teamEmployeeFromDb.AddTeamEmployee(roleId, teamId, employeeId);
+
+                    if (addSuccess)
+                    {
+                        // Обновляем список сотрудников после добавления
+                        RefreshEmployeeList(teamId);
+                        CustomMessageBox.Show("Сотрудник добавлен в команду", "Успех");
+                        NavigationService.GoBack();
+                    }
+                    else
+                    {
+                        CustomMessageBox.Show("Не удалось добавить сотрудника", "Ошибка");
+                    }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при добавлении сотрудника: {ex.Message}", "Ошибка",
-                              MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show($"Ошибка: {ex.Message}", "Ошибка");
             }
         }
     }

@@ -1,6 +1,7 @@
 ﻿using Npgsql;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Windows;
 using TechFlow.Classes;
@@ -10,6 +11,21 @@ namespace TechFlow.Models
 {
     class ProjectFromDb
     {
+        private bool IsCurrentUserAdmin(NpgsqlConnection connection)
+        {
+            int currentEmployeeId = Authorization.currentUser.UserId;
+
+            using (NpgsqlCommand adminCheckCmd = new NpgsqlCommand(
+                "SELECT er.employee_role_name FROM employee e " +
+                "JOIN employee_role er ON e.role_id = er.employee_role_id " +
+                "WHERE e.employee_id = @employeeId", connection))
+            {
+                adminCheckCmd.Parameters.AddWithValue("@employeeId", currentEmployeeId);
+                string roleName = adminCheckCmd.ExecuteScalar()?.ToString();
+                return roleName == "Администратор";
+            }
+        }
+
         public List<Project> LoadProjects()
         {
             List<Project> projects = new List<Project>();
@@ -20,49 +36,41 @@ namespace TechFlow.Models
                 try
                 {
                     connection.Open();
+                    bool isAdmin = IsCurrentUserAdmin(connection);
 
-                    bool isAdmin = false;
-                    string checkAdminSql = "SELECT er.employee_role_name FROM employee e " +
-                                           "JOIN employee_role er ON e.role_id = er.employee_role_id " +
-                                           "WHERE e.employee_id = @employeeId";
+                    string sql = @"
+                        SELECT 
+                            p.project_id, 
+                            p.project_name, 
+                            p.project_description,
+                            p.start_date, 
+                            p.end_date, 
+                            p.client_id, 
+                            p.project_type,
+                            p.budget, 
+                            p.requirements, 
+                            p.is_urgent, 
+                            p.is_confidential,
+                            p.created_at,
+                            c.organization_name AS client_name,
+                            s.status_name AS status
+                        FROM project p
+                        JOIN client c ON p.client_id = c.client_id
+                        JOIN status s ON p.status_id = s.status_id
+                        WHERE s.status_name != 'На модерации'";
 
-                    using (NpgsqlCommand adminCheckCmd = new NpgsqlCommand(checkAdminSql, connection))
+                    if (!isAdmin)
                     {
-                        adminCheckCmd.Parameters.AddWithValue("@employeeId", currentEmployeeId);
-                        string roleName = adminCheckCmd.ExecuteScalar()?.ToString();
-                        isAdmin = roleName == "Администратор";
+                        sql += @"
+                        AND EXISTS (
+                            SELECT 1 FROM project_stage ps
+                            JOIN task t ON t.stage_id = ps.stage_id
+                            JOIN team_employee te ON t.team_id = te.team_id
+                            WHERE ps.project_id = p.project_id AND te.employee_id = @employeeId
+                        )";
                     }
 
-                    string sqlExp = @"
-                SELECT 
-                    p.project_id, 
-                    p.project_name, 
-                    p.project_description, 
-                    p.start_date, 
-                    p.end_date, 
-                    p.client_id, 
-                    p.project_type, 
-                    p.budget, 
-                    p.requirements, 
-                    p.is_urgent, 
-                    p.is_confidential, 
-                    p.created_at,
-                    c.organization_name AS client_name,
-                    s.status_name AS status
-                FROM public.project p
-                JOIN public.client c ON p.client_id = c.client_id
-                JOIN public.status s ON p.status_id = s.status_id
-                WHERE s.status_name != 'На модерации' " +
-                        (isAdmin ? "" : @"AND p.project_id IN (
-                    SELECT DISTINCT ps.project_id 
-                    FROM project_stage ps
-                    JOIN task t ON ps.stage_id = t.stage_id
-                    JOIN team_employee te ON t.team_id = te.team_id
-                    WHERE te.employee_id = @employeeId
-                )") +
-                        " ORDER BY p.project_id;";
-
-                    using (NpgsqlCommand command = new NpgsqlCommand(sqlExp, connection))
+                    using (NpgsqlCommand command = new NpgsqlCommand(sql, connection))
                     {
                         if (!isAdmin)
                         {
@@ -74,20 +82,20 @@ namespace TechFlow.Models
                             while (reader.Read())
                             {
                                 projects.Add(new Project(
-                                    projectId: Convert.ToInt32(reader["project_id"]),
-                                    projectName: reader["project_name"].ToString(),
-                                    projectDescription: reader["project_description"]?.ToString() ?? "",
-                                    startDate: Convert.ToDateTime(reader["start_date"]),
-                                    endDate: reader["end_date"] != DBNull.Value ? Convert.ToDateTime(reader["end_date"]) : (DateTime?)null,
-                                    clientId: Convert.ToInt32(reader["client_id"]),
-                                    projectType: reader["project_type"]?.ToString() ?? "",
-                                    budget: reader["budget"] != DBNull.Value ? Convert.ToDecimal(reader["budget"]) : (decimal?)null,
-                                    requirements: reader["requirements"]?.ToString() ?? "",
-                                    isUrgent: Convert.ToBoolean(reader["is_urgent"]),
-                                    isConfidential: Convert.ToBoolean(reader["is_confidential"]),
-                                    createdAt: Convert.ToDateTime(reader["created_at"]),
-                                    clientName: reader["client_name"].ToString(),
-                                    status: reader["status"].ToString()
+                                    projectId: reader.GetInt32(reader.GetOrdinal("project_id")),
+                                    projectName: reader.GetString(reader.GetOrdinal("project_name")),
+                                    projectDescription: reader.IsDBNull(reader.GetOrdinal("project_description")) ? "" : reader.GetString(reader.GetOrdinal("project_description")),
+                                    startDate: reader.GetDateTime(reader.GetOrdinal("start_date")),
+                                    endDate: reader.IsDBNull(reader.GetOrdinal("end_date")) ? (DateTime?)null : reader.GetDateTime(reader.GetOrdinal("end_date")),
+                                    clientId: reader.GetInt32(reader.GetOrdinal("client_id")),
+                                    projectType: reader.IsDBNull(reader.GetOrdinal("project_type")) ? "" : reader.GetString(reader.GetOrdinal("project_type")),
+                                    budget: reader.IsDBNull(reader.GetOrdinal("budget")) ? (decimal?)null : reader.GetDecimal(reader.GetOrdinal("budget")),
+                                    requirements: reader.IsDBNull(reader.GetOrdinal("requirements")) ? "" : reader.GetString(reader.GetOrdinal("requirements")),
+                                    isUrgent: reader.GetBoolean(reader.GetOrdinal("is_urgent")),
+                                    isConfidential: reader.GetBoolean(reader.GetOrdinal("is_confidential")),
+                                    createdAt: reader.GetDateTime(reader.GetOrdinal("created_at")),
+                                    clientName: reader.GetString(reader.GetOrdinal("client_name")),
+                                    status: reader.GetString(reader.GetOrdinal("status"))
                                 ));
                             }
                         }
@@ -98,44 +106,65 @@ namespace TechFlow.Models
                     MessageBox.Show("Ошибка загрузки проектов: " + ex.Message);
                 }
             }
+
             return projects;
         }
 
         public List<Project> SearchProjects(string searchText)
         {
             List<Project> projects = new List<Project>();
+            int currentEmployeeId = Authorization.currentUser.UserId;
 
             using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
             {
                 try
                 {
                     connection.Open();
+                    bool isAdmin = IsCurrentUserAdmin(connection);
+
                     string sql = @"
-                SELECT 
-                    p.project_id, 
-                    p.project_name, 
-                    p.project_description,
-                    p.start_date, 
-                    p.end_date, 
-                    p.client_id, 
-                    p.project_type,
-                    p.budget, 
-                    p.requirements, 
-                    p.is_urgent, 
-                    p.is_confidential,
-                    p.created_at,
-                    c.organization_name AS client_name,
-                    s.status_name AS status
-                FROM project p
-                JOIN client c ON p.client_id = c.client_id
-                JOIN status s ON p.status_id = s.status_id
-                WHERE p.project_name ILIKE @search
-                AND s.status_name != 'На модерации'
-                ORDER BY p.project_id";
+                        SELECT 
+                            p.project_id, 
+                            p.project_name, 
+                            p.project_description,
+                            p.start_date, 
+                            p.end_date, 
+                            p.client_id, 
+                            p.project_type,
+                            p.budget, 
+                            p.requirements, 
+                            p.is_urgent, 
+                            p.is_confidential,
+                            p.created_at,
+                            c.organization_name AS client_name,
+                            s.status_name AS status
+                        FROM project p
+                        JOIN client c ON p.client_id = c.client_id
+                        JOIN status s ON p.status_id = s.status_id
+                        WHERE p.project_name ILIKE @search
+                        AND s.status_name != 'На модерации'";
+
+                    if (!isAdmin)
+                    {
+                        sql += @"
+                        AND EXISTS (
+                            SELECT 1 FROM project_stage ps
+                            JOIN task t ON t.stage_id = ps.stage_id
+                            JOIN team_employee te ON t.team_id = te.team_id
+                            WHERE ps.project_id = p.project_id AND te.employee_id = @employeeId
+                        )";
+                    }
+
+                    sql += " ORDER BY p.project_id";
 
                     using (NpgsqlCommand command = new NpgsqlCommand(sql, connection))
                     {
                         command.Parameters.AddWithValue("@search", $"%{searchText}%");
+
+                        if (!isAdmin)
+                        {
+                            command.Parameters.AddWithValue("@employeeId", currentEmployeeId);
+                        }
 
                         using (NpgsqlDataReader reader = command.ExecuteReader())
                         {
@@ -184,55 +213,75 @@ namespace TechFlow.Models
 
         public Project GetProjectById(int projectId)
         {
+            int currentEmployeeId = Authorization.currentUser.UserId;
+
             using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
             {
                 try
                 {
                     connection.Open();
-                    string sqlExp = @"
-                SELECT 
-                    p.project_id, 
-                    p.project_name, 
-                    p.project_description, 
-                    p.start_date, 
-                    p.end_date, 
-                    p.client_id, 
-                    p.project_type, 
-                    p.budget, 
-                    p.requirements, 
-                    p.is_urgent, 
-                    p.is_confidential, 
-                    p.created_at,
-                    c.organization_name AS client_name,
-                    s.status_name AS status
-                FROM public.project p
-                JOIN public.client c ON p.client_id = c.client_id
-                JOIN public.status s ON p.status_id = s.status_id
-                WHERE p.project_id = @projectId;";
+                    bool isAdmin = IsCurrentUserAdmin(connection);
 
-                    using (NpgsqlCommand command = new NpgsqlCommand(sqlExp, connection))
+                    string sql = @"
+                        SELECT 
+                            p.project_id, 
+                            p.project_name, 
+                            p.project_description,
+                            p.start_date, 
+                            p.end_date, 
+                            p.client_id, 
+                            p.project_type,
+                            p.budget, 
+                            p.requirements, 
+                            p.is_urgent, 
+                            p.is_confidential,
+                            p.created_at,
+                            c.organization_name AS client_name,
+                            s.status_name AS status
+                        FROM project p
+                        JOIN client c ON p.client_id = c.client_id
+                        JOIN status s ON p.status_id = s.status_id
+                        WHERE p.project_id = @projectId";
+
+                    if (!isAdmin)
+                    {
+                        sql += @"
+                        AND EXISTS (
+                            SELECT 1 FROM project_stage ps
+                            JOIN task t ON t.stage_id = ps.stage_id
+                            JOIN team_employee te ON t.team_id = te.team_id
+                            WHERE ps.project_id = p.project_id AND te.employee_id = @employeeId
+                        )";
+                    }
+
+                    using (NpgsqlCommand command = new NpgsqlCommand(sql, connection))
                     {
                         command.Parameters.AddWithValue("@projectId", projectId);
+
+                        if (!isAdmin)
+                        {
+                            command.Parameters.AddWithValue("@employeeId", currentEmployeeId);
+                        }
 
                         using (NpgsqlDataReader reader = command.ExecuteReader())
                         {
                             if (reader.Read())
                             {
                                 return new Project(
-                                    projectId: Convert.ToInt32(reader["project_id"]),
-                                    projectName: reader["project_name"].ToString(),
-                                    projectDescription: reader["project_description"]?.ToString() ?? "",
-                                    startDate: Convert.ToDateTime(reader["start_date"]),
-                                    endDate: reader["end_date"] != DBNull.Value ? Convert.ToDateTime(reader["end_date"]) : (DateTime?)null,
-                                    clientId: Convert.ToInt32(reader["client_id"]),
-                                    projectType: reader["project_type"]?.ToString() ?? "",
-                                    budget: reader["budget"] != DBNull.Value ? Convert.ToDecimal(reader["budget"]) : (decimal?)null,
-                                    requirements: reader["requirements"]?.ToString() ?? "",
-                                    isUrgent: Convert.ToBoolean(reader["is_urgent"]),
-                                    isConfidential: Convert.ToBoolean(reader["is_confidential"]),
-                                    createdAt: Convert.ToDateTime(reader["created_at"]),
-                                    clientName: reader["client_name"].ToString(),
-                                    status: reader["status"].ToString()
+                                    projectId: reader.GetInt32(reader.GetOrdinal("project_id")),
+                                    projectName: reader.GetString(reader.GetOrdinal("project_name")),
+                                    projectDescription: reader.IsDBNull(reader.GetOrdinal("project_description")) ? "" : reader.GetString(reader.GetOrdinal("project_description")),
+                                    startDate: reader.GetDateTime(reader.GetOrdinal("start_date")),
+                                    endDate: reader.IsDBNull(reader.GetOrdinal("end_date")) ? (DateTime?)null : reader.GetDateTime(reader.GetOrdinal("end_date")),
+                                    clientId: reader.GetInt32(reader.GetOrdinal("client_id")),
+                                    projectType: reader.IsDBNull(reader.GetOrdinal("project_type")) ? "" : reader.GetString(reader.GetOrdinal("project_type")),
+                                    budget: reader.IsDBNull(reader.GetOrdinal("budget")) ? (decimal?)null : reader.GetDecimal(reader.GetOrdinal("budget")),
+                                    requirements: reader.IsDBNull(reader.GetOrdinal("requirements")) ? "" : reader.GetString(reader.GetOrdinal("requirements")),
+                                    isUrgent: reader.GetBoolean(reader.GetOrdinal("is_urgent")),
+                                    isConfidential: reader.GetBoolean(reader.GetOrdinal("is_confidential")),
+                                    createdAt: reader.GetDateTime(reader.GetOrdinal("created_at")),
+                                    clientName: reader.GetString(reader.GetOrdinal("client_name")),
+                                    status: reader.GetString(reader.GetOrdinal("status"))
                                 );
                             }
                         }
@@ -249,67 +298,63 @@ namespace TechFlow.Models
 
         public List<Project> LoadModeratingProjects()
         {
-            List<Project> projects = new List<Project>();
+            var projects = new List<Project>();
 
-            using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
+            using (var connection = new NpgsqlConnection(DbConnection.connectionStr))
             {
                 try
                 {
                     connection.Open();
-                    string sqlExp = @"
-                SELECT 
-                    p.project_id, 
-                    p.project_name, 
-                    p.project_description, 
-                    p.start_date, 
-                    p.end_date, 
-                    p.client_id, 
-                    p.project_type, 
-                    p.budget, 
-                    p.requirements, 
-                    p.is_urgent, 
-                    p.is_confidential, 
-                    p.created_at,
-                    c.organization_name AS client_name,
-                    s.status_name AS status
-                FROM public.project p
-                JOIN public.client c ON p.client_id = c.client_id
-                JOIN public.status s ON p.status_id = s.status_id
-                WHERE s.status_name = 'На модерации'
-                ORDER BY p.created_at DESC;";
 
-                    using (NpgsqlCommand command = new NpgsqlCommand(sqlExp, connection))
-                    using (NpgsqlDataReader reader = command.ExecuteReader())
+                    // Загружаем проекты, ожидающие модерации (is_moderated = false)
+                    string sql = @"
+                SELECT 
+                    p.project_id, p.project_name, p.project_description,
+                    p.start_date, p.end_date, p.client_id, p.project_type,
+                    p.budget, p.requirements, p.is_urgent, p.is_confidential,
+                    p.created_at, c.organization_name, s.status_name
+                FROM project p
+                JOIN client c ON p.client_id = c.client_id
+                JOIN status s ON p.status_id = s.status_id
+                WHERE p.is_moderated = false
+                ORDER BY p.created_at DESC";
+
+                    using (var cmd = new NpgsqlCommand(sql, connection))
                     {
-                        while (reader.Read())
+                        using (var reader = cmd.ExecuteReader())
                         {
-                            projects.Add(new Project(
-                                projectId: Convert.ToInt32(reader["project_id"]),
-                                projectName: reader["project_name"].ToString(),
-                                projectDescription: reader["project_description"]?.ToString() ?? "",
-                                startDate: Convert.ToDateTime(reader["start_date"]),
-                                endDate: reader["end_date"] != DBNull.Value ? Convert.ToDateTime(reader["end_date"]) : (DateTime?)null,
-                                clientId: Convert.ToInt32(reader["client_id"]),
-                                projectType: reader["project_type"]?.ToString() ?? "",
-                                budget: reader["budget"] != DBNull.Value ? Convert.ToDecimal(reader["budget"]) : (decimal?)null,
-                                requirements: reader["requirements"]?.ToString() ?? "",
-                                isUrgent: Convert.ToBoolean(reader["is_urgent"]),
-                                isConfidential: Convert.ToBoolean(reader["is_confidential"]),
-                                createdAt: Convert.ToDateTime(reader["created_at"]),
-                                clientName: reader["client_name"].ToString(),
-                                status: reader["status"].ToString()
-                            ));
+                            while (reader.Read())
+                            {
+                                projects.Add(new Project(
+                                    projectId: reader.GetInt32(0),
+                                    projectName: reader.GetString(1),
+                                    projectDescription: reader.IsDBNull(2) ? "" : reader.GetString(2),
+                                    startDate: reader.GetDateTime(3),
+                                    endDate: reader.IsDBNull(4) ? (DateTime?)null : reader.GetDateTime(4),
+                                    clientId: reader.GetInt32(5),
+                                    projectType: reader.IsDBNull(6) ? "" : reader.GetString(6),
+                                    budget: reader.IsDBNull(7) ? (decimal?)null : reader.GetDecimal(7),
+                                    requirements: reader.IsDBNull(8) ? "" : reader.GetString(8),
+                                    isUrgent: reader.GetBoolean(9),
+                                    isConfidential: reader.GetBoolean(10),
+                                    createdAt: reader.GetDateTime(11),
+                                    clientName: reader.GetString(12),
+                                    status: reader.GetString(13)
+                                ));
+                            }
                         }
                     }
                 }
-                catch (NpgsqlException ex)
+                catch (Exception ex)
                 {
-                    MessageBox.Show("Ошибка загрузки проектов на модерации: " + ex.Message);
+                    Console.WriteLine($"Ошибка загрузки проектов: {ex.Message}");
+                    // Можно добавить MessageBox.Show для пользователя
                 }
             }
+
+            Console.WriteLine($"Загружено проектов на модерацию: {projects.Count}");
             return projects;
         }
-
 
         public bool CreateProject(
             string projectName,
@@ -329,85 +374,57 @@ namespace TechFlow.Models
                 {
                     connection.Open();
 
+                    // 1. Получаем ID статуса "На модерации"
                     int moderationStatusId;
-                    string statusQuery = "SELECT status_id FROM status WHERE status_name = 'На модерации'";
-
-                    using (var statusCmd = new NpgsqlCommand(statusQuery, connection))
+                    using (var cmd = new NpgsqlCommand("SELECT status_id FROM status WHERE status_name = 'На модерации'", connection))
                     {
-                        var result = statusCmd.ExecuteScalar();
-                        if (result == null || result == DBNull.Value)
+                        var result = cmd.ExecuteScalar();
+                        if (result == null || result is DBNull)
                         {
-                            MessageBox.Show("Не найден статус 'На модерации' в базе данных");
+                            MessageBox.Show("Статус 'На модерации' не найден в базе данных", "Ошибка");
                             return false;
                         }
                         moderationStatusId = Convert.ToInt32(result);
                     }
 
-                    string sql = @"
-                INSERT INTO project (
-                    status_id, project_name, project_description, 
-                    start_date, end_date, client_id, 
-                    project_type, budget, requirements,
-                    is_urgent, is_confidential, created_at
-                ) 
-                VALUES (
-                    @statusId, @projectName, @projectDescription,
-                    @startDate, @endDate, @clientId,
-                    @projectType, @budget, @requirements,
-                    @isUrgent, @isConfidential, @createdAt
-                )";
-
-                    using (var cmd = new NpgsqlCommand(sql, connection))
+                    // 2. Вызываем хранимую процедуру
+                    using (var cmd = new NpgsqlCommand("sp_create_project", connection))
                     {
-                        cmd.Parameters.AddWithValue("@statusId", moderationStatusId);
-                        cmd.Parameters.AddWithValue("@projectName", projectName);
-                        cmd.Parameters.AddWithValue("@projectDescription", projectDescription);
-                        cmd.Parameters.AddWithValue("@startDate", startDate);
-                        cmd.Parameters.AddWithValue("@endDate", endDate ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@clientId", clientId);
-                        cmd.Parameters.AddWithValue("@projectType", projectType ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@budget", budget ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@requirements", requirements ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@isUrgent", isUrgent);
-                        cmd.Parameters.AddWithValue("@isConfidential", isConfidential);
-                        cmd.Parameters.AddWithValue("@createdAt", DateTime.Now);
+                        cmd.CommandType = CommandType.StoredProcedure;
 
-                        return cmd.ExecuteNonQuery() > 0;
+                        // Добавляем параметры
+                        cmd.Parameters.Add(new NpgsqlParameter("p_project_name", NpgsqlTypes.NpgsqlDbType.Varchar) { Value = projectName });
+                        cmd.Parameters.Add(new NpgsqlParameter("p_project_description", NpgsqlTypes.NpgsqlDbType.Text) { Value = (object)projectDescription ?? DBNull.Value });
+                        cmd.Parameters.Add(new NpgsqlParameter("p_start_date", NpgsqlTypes.NpgsqlDbType.Date) { Value = startDate });
+                        cmd.Parameters.Add(new NpgsqlParameter("p_end_date", NpgsqlTypes.NpgsqlDbType.Date) { Value = (object)endDate ?? DBNull.Value });
+                        cmd.Parameters.Add(new NpgsqlParameter("p_client_id", NpgsqlTypes.NpgsqlDbType.Integer) { Value = clientId });
+                        cmd.Parameters.Add(new NpgsqlParameter("p_status_id", NpgsqlTypes.NpgsqlDbType.Integer) { Value = moderationStatusId });
+                        cmd.Parameters.Add(new NpgsqlParameter("p_project_type", NpgsqlTypes.NpgsqlDbType.Varchar) { Value = (object)projectType ?? DBNull.Value });
+                        cmd.Parameters.Add(new NpgsqlParameter("p_budget", NpgsqlTypes.NpgsqlDbType.Numeric) { Value = (object)budget ?? DBNull.Value });
+                        cmd.Parameters.Add(new NpgsqlParameter("p_requirements", NpgsqlTypes.NpgsqlDbType.Text) { Value = (object)requirements ?? DBNull.Value });
+                        cmd.Parameters.Add(new NpgsqlParameter("p_is_urgent", NpgsqlTypes.NpgsqlDbType.Boolean) { Value = isUrgent });
+                        cmd.Parameters.Add(new NpgsqlParameter("p_is_confidential", NpgsqlTypes.NpgsqlDbType.Boolean) { Value = isConfidential });
+
+                        cmd.ExecuteNonQuery();
+                        return true;
                     }
                 }
-                catch (NpgsqlException ex)
+                catch (PostgresException pgEx)
                 {
-                    MessageBox.Show($"Ошибка при создании проекта: {ex.Message}");
+                    string errorMessage;
+                    if (pgEx.SqlState == "23503")
+                        errorMessage = "Ошибка внешнего ключа. Проверьте существование клиента и статуса.";
+                    else if (pgEx.SqlState == "23505")
+                        errorMessage = "Проект с таким именем уже существует.";
+                    else
+                        errorMessage = $"Ошибка базы данных: {pgEx.Message}";
+
+                    MessageBox.Show(errorMessage, "Ошибка создания проекта");
                     return false;
                 }
-            }
-        }
-
-        public bool ModerateProject(int projectId, bool isApproved)
-        {
-            using (var connection = new NpgsqlConnection(DbConnection.connectionStr))
-            {
-                try
+                catch (Exception ex)
                 {
-                    connection.Open();
-                    string sql = @"
-                UPDATE project 
-                SET is_moderated = TRUE,
-                    status_id = (SELECT status_id FROM status WHERE status_name = @statusName)
-                WHERE project_id = @projectId";
-
-                    using (var cmd = new NpgsqlCommand(sql, connection))
-                    {
-                        string statusName = isApproved ? "В работе" : "Отклонен";
-                        cmd.Parameters.AddWithValue("@statusName", statusName);
-                        cmd.Parameters.AddWithValue("@projectId", projectId);
-
-                        return cmd.ExecuteNonQuery() > 0;
-                    }
-                }
-                catch (NpgsqlException ex)
-                {
-                    MessageBox.Show($"Ошибка при модерации проекта: {ex.Message}");
+                    MessageBox.Show($"Ошибка при создании проекта: {ex.Message}", "Ошибка");
                     return false;
                 }
             }
@@ -421,38 +438,22 @@ namespace TechFlow.Models
                 {
                     connection.Open();
 
-                    string statusQuery = "SELECT status_id FROM status WHERE status_name = 'Активный'";
-                    int activeStatusId;
-
-                    using (var statusCmd = new NpgsqlCommand(statusQuery, connection))
-                    {
-                        var result = statusCmd.ExecuteScalar();
-                        if (result == null || result == DBNull.Value)
-                        {
-                            MessageBox.Show("Не найден статус 'Активный' в базе данных");
-                            return false;
-                        }
-                        activeStatusId = Convert.ToInt32(result);
-                    }
-
                     string sql = @"
                 UPDATE project 
-                SET status_id = @statusId,
-                    is_moderated = TRUE
+                SET is_moderated = true,
+                    status_id = (SELECT status_id FROM status WHERE status_name = 'Активный')
                 WHERE project_id = @projectId";
 
                     using (var cmd = new NpgsqlCommand(sql, connection))
                     {
-                        cmd.Parameters.AddWithValue("@statusId", activeStatusId);
                         cmd.Parameters.AddWithValue("@projectId", projectId);
-
-                        int rowsAffected = cmd.ExecuteNonQuery();
-                        return rowsAffected > 0;
+                        int affected = cmd.ExecuteNonQuery();
+                        return affected > 0;
                     }
                 }
-                catch (NpgsqlException ex)
+                catch (Exception ex)
                 {
-                    MessageBox.Show($"Ошибка при утверждении проекта: {ex.Message}");
+                    Console.WriteLine($"Ошибка утверждения проекта: {ex.Message}");
                     return false;
                 }
             }
@@ -466,77 +467,84 @@ namespace TechFlow.Models
                 {
                     connection.Open();
 
-                    string statusQuery = "SELECT status_id FROM status WHERE status_name = 'Отклонен'";
-                    int rejectedStatusId;
-
-                    using (var statusCmd = new NpgsqlCommand(statusQuery, connection))
-                    {
-                        var result = statusCmd.ExecuteScalar();
-                        if (result == null || result == DBNull.Value)
-                        {
-                            MessageBox.Show("Не найден статус 'Отклонен' в базе данных");
-                            return false;
-                        }
-                        rejectedStatusId = Convert.ToInt32(result);
-                    }
-
                     string sql = @"
                 UPDATE project 
-                SET status_id = @statusId,
-                    is_moderated = TRUE
+                SET is_moderated = true,
+                    status_id = (SELECT status_id FROM status WHERE status_name = 'Активный')
                 WHERE project_id = @projectId";
 
                     using (var cmd = new NpgsqlCommand(sql, connection))
                     {
-                        cmd.Parameters.AddWithValue("@statusId", rejectedStatusId);
                         cmd.Parameters.AddWithValue("@projectId", projectId);
-
-                        int rowsAffected = cmd.ExecuteNonQuery();
-                        return rowsAffected > 0;
+                        int affected = cmd.ExecuteNonQuery();
+                        return affected > 0;
                     }
                 }
-                catch (NpgsqlException ex)
+                catch (Exception ex)
                 {
-                    MessageBox.Show($"Ошибка при отклонении проекта: {ex.Message}");
+                    Console.WriteLine($"Ошибка отклонения проекта: {ex.Message}");
                     return false;
                 }
             }
         }
 
-        public List<Project> FilterProjects(string searchText, string status, string clientName,
-                                          bool isUrgent, bool isConfidential,
-                                          string sortBy = "default")
+        public List<Project> FilterProjects(
+            string searchText,
+            string status,
+            string clientName,
+            bool isUrgent,
+            bool isConfidential,
+            string sortBy = "default")
         {
             List<Project> projects = new List<Project>();
+            int currentEmployeeId = Authorization.currentUser.UserId;
 
             using (NpgsqlConnection connection = new NpgsqlConnection(DbConnection.connectionStr))
             {
                 try
                 {
                     connection.Open();
+                    bool isAdmin = IsCurrentUserAdmin(connection);
 
-                    string sql = @"SELECT 
-                    p.project_id, 
-                    p.project_name, 
-                    p.project_description, 
-                    p.start_date, 
-                    p.end_date, 
-                    p.client_id, 
-                    p.project_type, 
-                    p.budget, 
-                    p.requirements, 
-                    p.is_urgent, 
-                    p.is_confidential, 
-                    p.created_at,
-                    c.organization_name AS client_name,
-                    s.status_name AS status
-                FROM public.project p
-                JOIN public.client c ON p.client_id = c.client_id
-                JOIN public.status s ON p.status_id = s.status_id
-                WHERE s.status_name != 'На модерации'";
+                    string sql = @"
+                        SELECT 
+                            p.project_id, 
+                            p.project_name, 
+                            p.project_description, 
+                            p.start_date, 
+                            p.end_date, 
+                            p.client_id, 
+                            p.project_type, 
+                            p.budget, 
+                            p.requirements, 
+                            p.is_urgent, 
+                            p.is_confidential, 
+                            p.created_at,
+                            c.organization_name AS client_name,
+                            s.status_name AS status
+                        FROM project p
+                        JOIN client c ON p.client_id = c.client_id
+                        JOIN status s ON p.status_id = s.status_id
+                        WHERE s.status_name != 'На модерации'";
+
+                    if (!isAdmin)
+                    {
+                        sql += @"
+                        AND EXISTS (
+                            SELECT 1 FROM project_stage ps
+                            JOIN task t ON t.stage_id = ps.stage_id
+                            JOIN team_employee te ON t.team_id = te.team_id
+                            WHERE ps.project_id = p.project_id AND te.employee_id = @employeeId
+                        )";
+                    }
 
                     var conditions = new List<string>();
                     var parameters = new List<NpgsqlParameter>();
+
+                    if (!isAdmin)
+                    {
+                        parameters.Add(new NpgsqlParameter("@employeeId", currentEmployeeId));
+                    }
 
                     if (!string.IsNullOrEmpty(searchText))
                     {

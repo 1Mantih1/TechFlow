@@ -17,9 +17,6 @@ using TechFlow.Windows;
 
 namespace TechFlow.Pages
 {
-    /// <summary>
-    /// Логика взаимодействия для ProjectDetailsPage.xaml
-    /// </summary>
     public partial class ProjectDetailsPage : Page
     {
         private int projectId;

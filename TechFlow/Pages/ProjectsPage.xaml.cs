@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using TechFlow.Classes;
 using TechFlow.Models;
+using TechFlow.Windows;
 
 namespace TechFlow.Pages
 {
@@ -131,7 +132,7 @@ namespace TechFlow.Pages
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки проектов: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка загрузки проектов: {ex.Message}");
             }
         }
 
@@ -180,7 +181,7 @@ namespace TechFlow.Pages
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка поиска: {ex.Message}");
+                CustomMessageBox.Show($"Ошибка поиска: {ex.Message}");
             }
         }
 

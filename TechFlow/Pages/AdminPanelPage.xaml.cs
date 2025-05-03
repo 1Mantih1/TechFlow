@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using TechFlow.Models;
+using TechFlow.Windows;
 
 namespace TechFlow.Pages
 {
@@ -48,7 +49,7 @@ namespace TechFlow.Pages
                 var projectFromDb = new ProjectFromDb();
                 if (projectFromDb.ApproveProject(projectId))
                 {
-                    MessageBox.Show("Проект утвержден");
+                    CustomMessageBox.Show("Проект утвержден");
                     LoadUnmoderatedProjects();
                 }
             }
@@ -61,7 +62,7 @@ namespace TechFlow.Pages
                 var projectFromDb = new ProjectFromDb();
                 if (projectFromDb.RejectProject(projectId))
                 {
-                    MessageBox.Show("Проект отклонен");
+                    CustomMessageBox.Show("Проект отклонен");
                     LoadUnmoderatedProjects();
                 }
             }
@@ -71,13 +72,11 @@ namespace TechFlow.Pages
         {
             if (((Button)sender).DataContext is User user)
             {
-                // Устанавливаем роль "Разработчик" по умолчанию
-                if (userFromDb.UpdateEmployeeRole(user.UserId, "Разработчик"))
+                if (userFromDb.UpdateEmployeeRole(user.UserId, "Сотрудник"))
                 {
-                    // Создаем запись в табеле
                     timesheetFromDb.CreateInitialTimesheet(user.UserId);
 
-                    MessageBox.Show("Сотрудник принят и добавлен в табель");
+                    CustomMessageBox.Show("Сотрудник принят и добавлен в табель");
                     LoadModerationData();
                 }
             }
@@ -89,7 +88,7 @@ namespace TechFlow.Pages
             {
                 if (userFromDb.DeleteUser(user.UserId))
                 {
-                    MessageBox.Show("Сотрудник отклонен и удален из системы");
+                    CustomMessageBox.Show("Сотрудник отклонен и удален из системы");
                     LoadModerationData();
                 }
             }
